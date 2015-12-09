@@ -1,0 +1,69 @@
+package unicreds
+
+import (
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/kms"
+)
+
+// KeyManagement is a sub-set of the capabilities of the KMS client.
+type KeyManagement interface {
+	GenerateDataKey(*kms.GenerateDataKeyInput) (*kms.GenerateDataKeyOutput, error)
+	Decrypt(*kms.DecryptInput) (*kms.DecryptOutput, error)
+}
+
+var kmsSvc KeyManagement
+
+func init() {
+	kmsSvc = kms.New(session.New(), &aws.Config{Region: aws.String(Region)})
+}
+
+// DataKey which contains the details of the KMS key
+type DataKey struct {
+	CiphertextBlob []byte
+	Plaintext      []byte
+}
+
+// GenerateDataKey simplified method for generating a datakey with kms
+func GenerateDataKey(alias string, size int) (*DataKey, error) {
+
+	numberOfBytes := int64(size)
+
+	params := &kms.GenerateDataKeyInput{
+		KeyId:             aws.String(alias),
+		EncryptionContext: map[string]*string{},
+		GrantTokens:       []*string{},
+		NumberOfBytes:     aws.Int64(numberOfBytes),
+	}
+
+	resp, err := kmsSvc.GenerateDataKey(params)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &DataKey{
+		CiphertextBlob: resp.CiphertextBlob,
+		Plaintext:      resp.Plaintext, // return the plain text key after generation
+	}, nil
+}
+
+// DecryptDataKey ask kms to decrypt the supplied data key
+func DecryptDataKey(ciphertext []byte) (*DataKey, error) {
+
+	params := &kms.DecryptInput{
+		CiphertextBlob:    ciphertext,
+		EncryptionContext: map[string]*string{},
+		GrantTokens:       []*string{},
+	}
+	resp, err := kmsSvc.Decrypt(params)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &DataKey{
+		CiphertextBlob: ciphertext,
+		Plaintext:      resp.Plaintext, // transfer the plain text key after decryption
+	}, nil
+}
