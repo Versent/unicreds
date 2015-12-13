@@ -2,9 +2,9 @@
 
 unicreds is currently a pretty faithful port of [credstash](https://github.com/fugue/credstash) to [golang](https://golang.org/). This utility enables secure storage secrets in [DynamoDB](https://aws.amazon.com/dynamodb/) using [KMS](https://aws.amazon.com/kms/) to encrypt and sign these Credentials. Access to these keys is controlled using [IAM](https://aws.amazon.com/iam/).
 
-# disclaimer
+# building
 
-This is currently a work in progress, things are progressing but it is a side project.
+
 
 # why
 
