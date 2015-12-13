@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
 )
 
 const (
@@ -15,19 +16,25 @@ const (
 	Table = "credential-store"
 
 	// Region the AWS region dynamodb table
-	Region = "ap-southeast-2"
+	Region = "us-west-2"
 
 	// KmsKey default KMS key alias name
 	KmsKey = "alias/credstash"
 )
 
 var (
+	dynamoSvc dynamodbiface.DynamoDBAPI
+
 	// ErrSecretNotFound returned when unable to find the specified secret in dynamodb
 	ErrSecretNotFound = errors.New("Secret Not Found")
 
 	// ErrHmacValidationFailed returned when the hmac signature validation fails
 	ErrHmacValidationFailed = errors.New("Secret HMAC validation failed")
 )
+
+func init() {
+	dynamoSvc = dynamodb.New(session.New(), aws.NewConfig())
+}
 
 // Credential managed credential information
 type Credential struct {
@@ -46,9 +53,8 @@ type DecryptedCredential struct {
 
 // CreateDBTable create the table which stores credentials
 func CreateDBTable() (err error) {
-	svc := dynamodb.New(session.New(), &aws.Config{Region: aws.String(Region)})
 
-	res, err := svc.CreateTable(&dynamodb.CreateTableInput{
+	res, err := dynamoSvc.CreateTable(&dynamodb.CreateTableInput{
 		AttributeDefinitions: []*dynamodb.AttributeDefinition{
 			{
 				AttributeName: aws.String("name"),
@@ -88,9 +94,8 @@ func CreateDBTable() (err error) {
 
 // GetSecret retrieve the secret from dynamodb using the name
 func GetSecret(name string) (*DecryptedCredential, error) {
-	svc := dynamodb.New(session.New(), &aws.Config{Region: aws.String(Region)})
 
-	res, err := svc.Query(&dynamodb.QueryInput{
+	res, err := dynamoSvc.Query(&dynamodb.QueryInput{
 		TableName: aws.String(Table),
 		ExpressionAttributeNames: map[string]*string{
 			"#N": aws.String("name"),
@@ -127,9 +132,8 @@ func GetSecret(name string) (*DecryptedCredential, error) {
 
 // ListSecrets return a list of secrets
 func ListSecrets() ([]*DecryptedCredential, error) {
-	svc := dynamodb.New(session.New(), &aws.Config{Region: aws.String(Region)})
 
-	res, err := svc.Scan(&dynamodb.ScanInput{
+	res, err := dynamoSvc.Scan(&dynamodb.ScanInput{
 		TableName: aws.String(Table),
 		AttributesToGet: []*string{
 			aws.String("name"),
@@ -168,7 +172,6 @@ func ListSecrets() ([]*DecryptedCredential, error) {
 
 // PutSecret retrieve the secret from dynamodb
 func PutSecret(name, secret, version string) error {
-	svc := dynamodb.New(session.New(), &aws.Config{Region: aws.String(Region)})
 
 	if version == "" {
 		version = "1"
@@ -200,12 +203,64 @@ func PutSecret(name, secret, version string) error {
 		return err
 	}
 
-	_, err = svc.PutItem(&dynamodb.PutItemInput{
+	_, err = dynamoSvc.PutItem(&dynamodb.PutItemInput{
 		TableName: aws.String(Table),
 		Item:      data,
 	})
 
 	return err
+}
+
+// DeleteSecret delete a secret
+func DeleteSecret(name string) error {
+
+	res, err := dynamoSvc.Query(&dynamodb.QueryInput{
+		TableName: aws.String(Table),
+		ExpressionAttributeNames: map[string]*string{
+			"#N": aws.String("name"),
+		},
+		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
+			":name": &dynamodb.AttributeValue{
+				S: aws.String(name),
+			},
+		},
+		KeyConditionExpression: aws.String("#N = :name"),
+		ConsistentRead:         aws.Bool(true),
+		ScanIndexForward:       aws.Bool(false), // descending order
+	})
+
+	if err != nil {
+		return err
+	}
+
+	for _, item := range res.Items {
+		cred := new(Credential)
+
+		err = Decode(item, cred)
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("deleting name=%s version=%s\n", cred.Name, cred.Version)
+
+		_, err = dynamoSvc.DeleteItem(&dynamodb.DeleteItemInput{
+			TableName: aws.String(Table),
+			Key: map[string]*dynamodb.AttributeValue{
+				"name": &dynamodb.AttributeValue{
+					S: aws.String(cred.Name),
+				},
+				"version": &dynamodb.AttributeValue{
+					S: aws.String(cred.Version),
+				},
+			},
+		})
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func decryptCredential(cred *Credential) (*DecryptedCredential, error) {

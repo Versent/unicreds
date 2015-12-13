@@ -4,18 +4,13 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/kms"
+	"github.com/aws/aws-sdk-go/service/kms/kmsiface"
 )
 
-// KeyManagement is a sub-set of the capabilities of the KMS client.
-type KeyManagement interface {
-	GenerateDataKey(*kms.GenerateDataKeyInput) (*kms.GenerateDataKeyOutput, error)
-	Decrypt(*kms.DecryptInput) (*kms.DecryptOutput, error)
-}
-
-var kmsSvc KeyManagement
+var kmsSvc kmsiface.KMSAPI
 
 func init() {
-	kmsSvc = kms.New(session.New(), &aws.Config{Region: aws.String(Region)})
+	kmsSvc = kms.New(session.New(), aws.NewConfig())
 }
 
 // DataKey which contains the details of the KMS key
