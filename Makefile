@@ -1,10 +1,10 @@
 NAME=unicreds
 ARCH=$(shell uname -m)
 VERSION=1.0.0
-GO15VENDOREXPERIMENT=1
+GO15VENDOREXPERIMENT := 1
 
 vendor:
-	godep save
+	godep save -t -v ./...
 
 build:
 	rm -rf build && mkdir build

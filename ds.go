@@ -51,8 +51,8 @@ type DecryptedCredential struct {
 	Secret string
 }
 
-// CreateDBTable create the table which stores credentials
-func CreateDBTable() (err error) {
+// Setup create the table which stores credentials
+func Setup() (err error) {
 
 	res, err := dynamoSvc.CreateTable(&dynamodb.CreateTableInput{
 		AttributeDefinitions: []*dynamodb.AttributeDefinition{

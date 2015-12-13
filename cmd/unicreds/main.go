@@ -16,6 +16,8 @@ var (
 	alias = app.Flag("alias", "KMS key alias.").Default("alias/credstash").String()
 
 	// commands
+	cmdSetup = app.Command("setup", "Setup the dynamodb table used to store credentials.")
+
 	cmdGet     = app.Command("get", "Get a credential from the store.")
 	cmdGetName = cmdGet.Arg("credential", "The name of the credential to get.").Required().String()
 
@@ -39,6 +41,11 @@ func main() {
 	app.Version(Version)
 
 	switch kingpin.MustParse(app.Parse(os.Args[1:])) {
+	case cmdSetup.FullCommand():
+		err := unicreds.Setup()
+		if err != nil {
+			printFatalError(err)
+		}
 	case cmdGet.FullCommand():
 		cred, err := unicreds.GetSecret(*cmdGetName)
 		if err != nil {
