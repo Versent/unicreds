@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -15,11 +16,10 @@ const (
 	// Table the name of the dynamodb table
 	Table = "credential-store"
 
-	// Region the AWS region dynamodb table
-	Region = "us-west-2"
-
 	// KmsKey default KMS key alias name
 	KmsKey = "alias/credstash"
+
+	tableCreateTimeout = 30 * time.Second
 )
 
 var (
@@ -30,6 +30,9 @@ var (
 
 	// ErrHmacValidationFailed returned when the hmac signature validation fails
 	ErrHmacValidationFailed = errors.New("Secret HMAC validation failed")
+
+	// ErrTimeout timeout occured waiting for dynamodb table to create
+	ErrTimeout = errors.New("Timed out waiting for dynamodb table to become active")
 )
 
 func init() {
@@ -88,7 +91,8 @@ func Setup() (err error) {
 
 	fmt.Printf("res = %+v\n", res)
 
-	// TODO wait for table to be ACTIVE
+	err = waitForTable()
+
 	return
 }
 
@@ -300,4 +304,40 @@ func decryptCredential(cred *Credential) (*DecryptedCredential, error) {
 	plainText := string(secret)
 
 	return &DecryptedCredential{Credential: cred, Secret: plainText}, nil
+}
+
+func waitForTable() error {
+
+	timeout := make(chan bool, 1)
+	go func() {
+		time.Sleep(tableCreateTimeout)
+		timeout <- true
+	}()
+
+	ticker := time.NewTicker(1 * time.Second)
+
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			// a read from ch has occurred
+			res, err := dynamoSvc.DescribeTable(&dynamodb.DescribeTableInput{
+				TableName: aws.String(Table),
+			})
+
+			if err != nil {
+				return err
+			}
+
+			if *res.Table.TableStatus == "ACTIVE" {
+				return nil
+			}
+
+		case <-timeout:
+			// polling for table status has taken more than the timeout
+			return ErrTimeout
+		}
+	}
+
 }

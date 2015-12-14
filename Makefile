@@ -4,7 +4,7 @@ VERSION=1.0.0
 GO15VENDOREXPERIMENT := 1
 
 vendor:
-	godep save -t -v ./...
+	godep save -d -t
 
 build:
 	rm -rf build && mkdir build
@@ -22,4 +22,4 @@ release: build
 	tar -zcf release/$(NAME)_$(VERSION)_windows_$(ARCH).tgz -C build/Windows $(NAME).exe
 	gh-release create versent/$(NAME) $(VERSION) $(shell git rev-parse --abbrev-ref HEAD)
 
-.PHONY: build test release
+.PHONY: vendor build test release
