@@ -39,6 +39,11 @@ func init() {
 	dynamoSvc = dynamodb.New(session.New(), aws.NewConfig())
 }
 
+// SetDynamoDBConfig override the default aws configuration
+func SetDynamoDBConfig(config *aws.Config) {
+	dynamoSvc = dynamodb.New(session.New(), config)
+}
+
 // Credential managed credential information
 type Credential struct {
 	Name     string `ds:"name"`

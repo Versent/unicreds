@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/alecthomas/kingpin"
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/versent/unicreds"
 )
 
@@ -12,6 +13,8 @@ var (
 	app   = kingpin.New("unicreds", "A credential/secret storage command line tool.")
 	debug = app.Flag("debug", "Enable debug mode.").Bool()
 	csv   = app.Flag("csv", "Enable csv output for table data.").Bool()
+
+	region = app.Flag("region", "Configure the AWS region").String()
 
 	alias = app.Flag("alias", "KMS key alias.").Default("alias/credstash").String()
 
@@ -40,7 +43,15 @@ var (
 func main() {
 	app.Version(Version)
 
-	switch kingpin.MustParse(app.Parse(os.Args[1:])) {
+	command := kingpin.MustParse(app.Parse(os.Args[1:]))
+
+	// update the aws config overrides if present
+	if *region != "" {
+		unicreds.SetDynamoDBConfig(&aws.Config{Region: region})
+		unicreds.SetKMSConfig(&aws.Config{Region: region})
+	}
+
+	switch command {
 	case cmdSetup.FullCommand():
 		err := unicreds.Setup()
 		if err != nil {

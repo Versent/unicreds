@@ -13,6 +13,11 @@ func init() {
 	kmsSvc = kms.New(session.New(), aws.NewConfig())
 }
 
+// SetKMSConfig override the default aws configuration
+func SetKMSConfig(config *aws.Config) {
+	kmsSvc = kms.New(session.New(), config)
+}
+
 // DataKey which contains the details of the KMS key
 type DataKey struct {
 	CiphertextBlob []byte
