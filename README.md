@@ -44,6 +44,10 @@ Commands:
     Delete a credential from the store.
 ```
 
+# install
+
+At the moment the easiest way to install this tool is just to download it from the github releases.
+
 # why
 
 The number one reason for this port is platform support, getting credstash running on Windows and some older versions of Redhat Enterprise is a pain. Golang is fantastic at enabling simple deployment of core tools across a range of platforms with very little friction.
