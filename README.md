@@ -60,6 +60,12 @@ In addition to this we have some ideas about how this tool can be expanded to su
 
 That said we have learnt a lot from how credstash worked and aim to remain compatible with it in the future where possible.
 
+# todo
+
+* Add the ability to filter list / getall results using DynamoDB filters, at the moment I just use `| grep blah`.
+* Work on the output layout.
+* Make it easier to import files
+
 # license
 
 This code is Copyright (c) 2015 Versent and released under the MIT license. All rights not explicitly granted in the MIT license are reserved. See the included LICENSE.md file for more details.
