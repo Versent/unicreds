@@ -10,6 +10,8 @@ import (
 )
 
 // Encode return the value encoded as a map of dynamo attributes.
+//
+// NOTE: this function needs a lot more validation and refinement.
 func Encode(rawVal interface{}) (map[string]*dynamodb.AttributeValue, error) {
 	val := reflect.ValueOf(rawVal)
 	t := reflect.TypeOf(rawVal)

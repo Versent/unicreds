@@ -10,6 +10,8 @@ import (
 )
 
 // Decode decode the supplied struct from the dynamodb result map
+//
+// NOTE: this function needs a lot more validation and refinement.
 func Decode(data map[string]*dynamodb.AttributeValue, rawVal interface{}) error {
 	val := reflect.ValueOf(rawVal)
 	if val.Kind() != reflect.Ptr {
