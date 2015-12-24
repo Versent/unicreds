@@ -29,18 +29,18 @@ var (
 
 	cmdList = app.Command("list", "List all credentials names and version.")
 
-	cmdPut        = app.Command("put", "Put a credential in the store.")
-	cmdPutName    = cmdPut.Arg("credential", "The name of the credential to get.").Required().String()
+	cmdPut        = app.Command("put", "Put a credential into the store.")
+	cmdPutName    = cmdPut.Arg("credential", "The name of the credential to store.").Required().String()
 	cmdPutSecret  = cmdPut.Arg("value", "The value of the credential to store.").Required().String()
 	cmdPutVersion = cmdPut.Arg("version", "Version to store with the credential.").Int()
 
-	cmdPutFile           = app.Command("put-file", "Put a credential in the store.")
-	cmdPutFileName       = cmdPutFile.Arg("credential", "The name of the credential to get.").Required().String()
+	cmdPutFile           = app.Command("put-file", "Put a credential from a file into the store.")
+	cmdPutFileName       = cmdPutFile.Arg("credential", "The name of the credential to store.").Required().String()
 	cmdPutFileSecretPath = cmdPutFile.Arg("value", "Path to file containing the credential to store.").Required().String()
 	cmdPutFileVersion    = cmdPutFile.Arg("version", "Version to store with the credential.").Int()
 
 	cmdDelete     = app.Command("delete", "Delete a credential from the store.")
-	cmdDeleteName = cmdDelete.Arg("credential", "The name of the credential to get.").Required().String()
+	cmdDeleteName = cmdDelete.Arg("credential", "The name of the credential to delete.").Required().String()
 
 	// Version app version
 	Version = "1.0.0"
@@ -102,14 +102,14 @@ func main() {
 		}
 
 		table := unicreds.NewTable(os.Stdout)
-		table.SetHeaders([]string{"Name", "Version"})
+		table.SetHeaders([]string{"Name", "Version", "Created-At"})
 
 		if *csv {
 			table.SetFormat(unicreds.TableFormatCSV)
 		}
 
 		for _, cred := range creds {
-			table.Write([]string{cred.Name, cred.Version})
+			table.Write([]string{cred.Name, cred.Version, cred.CreatedAtDate()})
 		}
 		table.Render()
 	case cmdGetAll.FullCommand():

@@ -19,6 +19,10 @@ const (
 	// KmsKey default KMS key alias name
 	KmsKey = "alias/credstash"
 
+	// CreatedAtNotAvailable returned to indicate the created at field is missing
+	// from the secret
+	CreatedAtNotAvailable = "Not Available"
+
 	tableCreateTimeout = 30 * time.Second
 )
 
@@ -46,11 +50,21 @@ func SetDynamoDBConfig(config *aws.Config) {
 
 // Credential managed credential information
 type Credential struct {
-	Name     string `ds:"name"`
-	Version  string `ds:"version"`
-	Key      string `ds:"key"`
-	Contents string `ds:"contents"`
-	Hmac     string `ds:"hmac"`
+	Name      string `ds:"name"`
+	Version   string `ds:"version"`
+	Key       string `ds:"key"`
+	Contents  string `ds:"contents"`
+	Hmac      string `ds:"hmac"`
+	CreatedAt int64  `ds:"created_at"`
+}
+
+// CreatedAtDate convert the timestamp field to a date string
+func (c *Credential) CreatedAtDate() string {
+	if c.CreatedAt == 0 {
+		return CreatedAtNotAvailable
+	}
+	tm := time.Unix(c.CreatedAt, 0)
+	return tm.String()
 }
 
 // DecryptedCredential managed credential information
@@ -150,6 +164,7 @@ func ListSecrets() ([]*DecryptedCredential, error) {
 			aws.String("key"),
 			aws.String("contents"),
 			aws.String("hmac"),
+			aws.String("created_at"),
 		},
 		ConsistentRead: aws.Bool(true),
 	})
@@ -202,11 +217,12 @@ func PutSecret(name, secret, version string) error {
 	b64ctext := base64.StdEncoding.EncodeToString(ctext)
 
 	cred := &Credential{
-		Name:     name,
-		Version:  version,
-		Key:      base64.StdEncoding.EncodeToString(wrappedKey),
-		Contents: b64ctext,
-		Hmac:     b64hmac,
+		Name:      name,
+		Version:   version,
+		Key:       base64.StdEncoding.EncodeToString(wrappedKey),
+		Contents:  b64ctext,
+		Hmac:      b64hmac,
+		CreatedAt: time.Now().Unix(),
 	}
 
 	data, err := Encode(cred)
