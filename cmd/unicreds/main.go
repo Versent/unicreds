@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 
 	"github.com/alecthomas/kingpin"
@@ -31,7 +32,12 @@ var (
 	cmdPut        = app.Command("put", "Put a credential in the store.")
 	cmdPutName    = cmdPut.Arg("credential", "The name of the credential to get.").Required().String()
 	cmdPutSecret  = cmdPut.Arg("value", "The value of the credential to store.").Required().String()
-	cmdPutVersion = cmdPut.Arg("version", "The version to store with the credential.").Int()
+	cmdPutVersion = cmdPut.Arg("version", "Version to store with the credential.").Int()
+
+	cmdPutFile           = app.Command("put-file", "Put a credential in the store.")
+	cmdPutFileName       = cmdPutFile.Arg("credential", "The name of the credential to get.").Required().String()
+	cmdPutFileSecretPath = cmdPutFile.Arg("value", "Path to file containing the credential to store.").Required().String()
+	cmdPutFileVersion    = cmdPutFile.Arg("version", "Version to store with the credential.").Int()
 
 	cmdDelete     = app.Command("delete", "Delete a credential from the store.")
 	cmdDeleteName = cmdDelete.Arg("credential", "The name of the credential to get.").Required().String()
@@ -73,6 +79,22 @@ func main() {
 			printFatalError(err)
 		}
 		fmt.Printf("%s has been stored\n", *cmdPutName)
+	case cmdPutFile.FullCommand():
+		var version string
+		if *cmdPutFileVersion != 0 {
+			version = fmt.Sprintf("%d", *cmdPutFileVersion)
+		}
+
+		data, err := ioutil.ReadFile(*cmdPutFileSecretPath)
+		if err != nil {
+			printFatalError(err)
+		}
+
+		err = unicreds.PutSecret(*cmdPutFileName, string(data), version)
+		if err != nil {
+			printFatalError(err)
+		}
+		fmt.Printf("%s has been stored\n", *cmdPutFileName)
 	case cmdList.FullCommand():
 		creds, err := unicreds.ListSecrets()
 		if err != nil {

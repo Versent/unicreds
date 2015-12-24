@@ -187,6 +187,9 @@ func PutSecret(name, secret, version string) error {
 	}
 
 	dk, err := GenerateDataKey(KmsKey, 64)
+	if err != nil {
+		return err
+	}
 
 	dataKey := dk.Plaintext[:32]
 	hmacKey := dk.Plaintext[32:]
