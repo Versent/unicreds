@@ -16,8 +16,8 @@ const (
 	// Table the name of the dynamodb table
 	Table = "credential-store"
 
-	// KmsKey default KMS key alias name
-	KmsKey = "alias/credstash"
+	// DefaultKmsKey default KMS key alias name
+	DefaultKmsKey = "alias/credstash"
 
 	// CreatedAtNotAvailable returned to indicate the created at field is missing
 	// from the secret
@@ -195,13 +195,19 @@ func ListSecrets() ([]*DecryptedCredential, error) {
 }
 
 // PutSecret retrieve the secret from dynamodb
-func PutSecret(name, secret, version string) error {
+func PutSecret(alias, name, secret, version string) error {
+
+	kmsKey := DefaultKmsKey
+
+	if alias != "" {
+		kmsKey = alias
+	}
 
 	if version == "" {
 		version = "1"
 	}
 
-	dk, err := GenerateDataKey(KmsKey, 64)
+	dk, err := GenerateDataKey(kmsKey, 64)
 	if err != nil {
 		return err
 	}

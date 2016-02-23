@@ -74,7 +74,7 @@ func main() {
 		if *cmdPutVersion != 0 {
 			version = fmt.Sprintf("%d", *cmdPutVersion)
 		}
-		err := unicreds.PutSecret(*cmdPutName, *cmdPutSecret, version)
+		err := unicreds.PutSecret(*alias, *cmdPutName, *cmdPutSecret, version)
 		if err != nil {
 			printFatalError(err)
 		}
@@ -90,7 +90,7 @@ func main() {
 			printFatalError(err)
 		}
 
-		err = unicreds.PutSecret(*cmdPutFileName, string(data), version)
+		err = unicreds.PutSecret(*alias, *cmdPutFileName, string(data), version)
 		if err != nil {
 			printFatalError(err)
 		}
