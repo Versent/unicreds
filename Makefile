@@ -2,6 +2,7 @@ NAME=unicreds
 ARCH=$(shell uname -m)
 VERSION=1.0.5
 GO15VENDOREXPERIMENT := 1
+ITERATION := 1
 
 vendor:
 	godep save -d -t
@@ -22,5 +23,11 @@ release: build
 	tar -zcf release/$(NAME)_$(VERSION)_darwin_$(ARCH).tgz -C build/Darwin $(NAME)
 	tar -zcf release/$(NAME)_$(VERSION)_windows_$(ARCH).tgz -C build/Windows $(NAME).exe
 	gh-release create versent/$(NAME) $(VERSION) $(shell git rev-parse --abbrev-ref HEAD)
+
+packages:
+	rm -rf package && mkdir package
+	rm -rf stage && mkdir -p stage/usr/bin
+	cp build/Linux/unicreds stage/usr/bin
+	fpm --name $(NAME) -a x86_64 -t rpm -s dir --version $(VERSION) --iteration $(ITERATION) -C stage -p package/$(NAME)-$(VERSION)_$(ITERATION).rpm usr
 
 .PHONY: vendor build test release
