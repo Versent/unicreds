@@ -3,8 +3,11 @@ package unicreds
 import (
 	"encoding/base64"
 	"errors"
-	"fmt"
+	"sort"
+	"strconv"
 	"time"
+
+	"github.com/apex/log"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -73,10 +76,23 @@ type DecryptedCredential struct {
 	Secret string
 }
 
+// ByVersion sort helper for credentials
+type ByVersion []*Credential
+
+func (a ByVersion) Len() int      { return len(a) }
+func (a ByVersion) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+
+func (a ByVersion) Less(i, j int) bool {
+	aiv, _ := strconv.Atoi(a[i].Version)
+	ajv, _ := strconv.Atoi(a[j].Version)
+
+	return aiv < ajv
+}
+
 // Setup create the table which stores credentials
 func Setup() (err error) {
 
-	res, err := dynamoSvc.CreateTable(&dynamodb.CreateTableInput{
+	_, err = dynamoSvc.CreateTable(&dynamodb.CreateTableInput{
 		AttributeDefinitions: []*dynamodb.AttributeDefinition{
 			{
 				AttributeName: aws.String("name"),
@@ -108,7 +124,7 @@ func Setup() (err error) {
 		return
 	}
 
-	fmt.Printf("res = %+v\n", res)
+	log.Info("created")
 
 	err = waitForTable()
 
@@ -153,8 +169,72 @@ func GetSecret(name string) (*DecryptedCredential, error) {
 	return decryptCredential(cred)
 }
 
-// ListSecrets return a list of secrets
-func ListSecrets() ([]*DecryptedCredential, error) {
+// GetHighestVersion look up the highest version for a given name
+func GetHighestVersion(name string) (string, error) {
+
+	res, err := dynamoSvc.Query(&dynamodb.QueryInput{
+		TableName: aws.String(Table),
+		ExpressionAttributeNames: map[string]*string{
+			"#N": aws.String("name"),
+		},
+		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
+			":name": &dynamodb.AttributeValue{
+				S: aws.String(name),
+			},
+		},
+		KeyConditionExpression: aws.String("#N = :name"),
+		Limit:                aws.Int64(1),
+		ConsistentRead:       aws.Bool(true),
+		ScanIndexForward:     aws.Bool(false), // descending order
+		ProjectionExpression: aws.String("version"),
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	if len(res.Items) == 0 {
+		return "", ErrSecretNotFound
+	}
+
+	v := res.Items[0]["version"]
+
+	if v == nil {
+		return "", ErrSecretNotFound
+	}
+
+	return aws.StringValue(v.S), nil
+}
+
+// ListSecrets returns a list of all secrets
+func ListSecrets(all bool) ([]*Credential, error) {
+
+	res, err := dynamoSvc.Scan(&dynamodb.ScanInput{
+		TableName: aws.String(Table),
+		ExpressionAttributeNames: map[string]*string{
+			"#N": aws.String("name"),
+		},
+		ProjectionExpression: aws.String("#N, version, created_at"),
+		ConsistentRead:       aws.Bool(true),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if all {
+		return decodeCredential(res.Items)
+	}
+
+	creds, err := decodeCredential(res.Items)
+	if err != nil {
+		return nil, err
+	}
+
+	return filterLatest(creds)
+}
+
+// GetAllSecrets returns a list of all secrets
+func GetAllSecrets(all bool) ([]*DecryptedCredential, error) {
 
 	res, err := dynamoSvc.Scan(&dynamodb.ScanInput{
 		TableName: aws.String(Table),
@@ -168,20 +248,18 @@ func ListSecrets() ([]*DecryptedCredential, error) {
 		},
 		ConsistentRead: aws.Bool(true),
 	})
+	if err != nil {
+		return nil, err
+	}
 
+	creds, err := decodeCredential(res.Items)
 	if err != nil {
 		return nil, err
 	}
 
 	var results []*DecryptedCredential
 
-	for _, item := range res.Items {
-		cred := new(Credential)
-
-		err = Decode(item, cred)
-		if err != nil {
-			return nil, err
-		}
+	for _, cred := range creds {
 
 		dcred, err := decryptCredential(cred)
 		if err != nil {
@@ -240,6 +318,10 @@ func PutSecret(alias, name, secret, version string) error {
 	_, err = dynamoSvc.PutItem(&dynamodb.PutItemInput{
 		TableName: aws.String(Table),
 		Item:      data,
+		ExpressionAttributeNames: map[string]*string{
+			"#N": aws.String("name"),
+		},
+		ConditionExpression: aws.String("attribute_not_exists(#N)"),
 	})
 
 	return err
@@ -275,7 +357,7 @@ func DeleteSecret(name string) error {
 			return err
 		}
 
-		fmt.Printf("deleting name=%s version=%s\n", cred.Name, cred.Version)
+		log.WithFields(log.Fields{"name": cred.Name, "version": cred.Version}).Info("deleting")
 
 		_, err = dynamoSvc.DeleteItem(&dynamodb.DeleteItemInput{
 			TableName: aws.String(Table),
@@ -295,6 +377,30 @@ func DeleteSecret(name string) error {
 	}
 
 	return nil
+}
+
+// ResolveVersion calculate the version given a name and version
+func ResolveVersion(name string, version int) (string, error) {
+
+	if version != 0 {
+		return strconv.Itoa(version), nil
+	}
+
+	ver, err := GetHighestVersion(name)
+	if err != nil {
+		if err == ErrSecretNotFound {
+			return "1", nil
+		}
+		return "", err
+	}
+
+	if version, err = strconv.Atoi(ver); err != nil {
+		return "", err
+	}
+
+	version++
+
+	return strconv.Itoa(version), nil
 }
 
 func decryptCredential(cred *Credential) (*DecryptedCredential, error) {
@@ -334,6 +440,45 @@ func decryptCredential(cred *Credential) (*DecryptedCredential, error) {
 	plainText := string(secret)
 
 	return &DecryptedCredential{Credential: cred, Secret: plainText}, nil
+}
+
+func decodeCredential(items []map[string]*dynamodb.AttributeValue) ([]*Credential, error) {
+
+	results := make([]*Credential, 0, len(items))
+
+	for _, item := range items {
+		cred := new(Credential)
+
+		err := Decode(item, cred)
+		if err != nil {
+			return nil, err
+		}
+
+		results = append(results, cred)
+	}
+	return results, nil
+}
+
+func filterLatest(creds []*Credential) ([]*Credential, error) {
+
+	sort.Sort(ByVersion(creds))
+
+	names := map[string]*Credential{}
+
+	for _, cred := range creds {
+		names[cred.Name] = cred
+	}
+
+	results := make([]*Credential, 0, len(names))
+
+	for _, val := range names {
+		results = append(results, val)
+	}
+
+	// because maps key order is randomised in golang
+	sort.Sort(ByVersion(results))
+
+	return results, nil
 }
 
 func waitForTable() error {
