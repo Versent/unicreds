@@ -5,6 +5,9 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/apex/log"
+	"github.com/apex/log/handlers/cli"
+
 	"github.com/alecthomas/kingpin"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/versent/unicreds"
@@ -25,9 +28,10 @@ var (
 	cmdGet     = app.Command("get", "Get a credential from the store.")
 	cmdGetName = cmdGet.Arg("credential", "The name of the credential to get.").Required().String()
 
-	cmdGetAll = app.Command("getall", "Get all credentials from the store.")
+	cmdGetAll = app.Command("getall", "Get latest credentials from the store.")
 
-	cmdList = app.Command("list", "List all credentials names and version.")
+	cmdList    = app.Command("list", "List latest credentials with names and version.")
+	cmdListAll = cmdList.Flag("all", "List all versions").Bool()
 
 	cmdPut        = app.Command("put", "Put a credential into the store.")
 	cmdPutName    = cmdPut.Arg("credential", "The name of the credential to store.").Required().String()
@@ -48,6 +52,7 @@ var (
 
 func main() {
 	app.Version(Version)
+	log.SetHandler(cli.Default)
 
 	command := kingpin.MustParse(app.Parse(os.Args[1:]))
 
@@ -68,21 +73,22 @@ func main() {
 		if err != nil {
 			printFatalError(err)
 		}
-		fmt.Printf("%+v\n", cred.Secret)
+		fmt.Println(cred.Secret)
 	case cmdPut.FullCommand():
-		var version string
-		if *cmdPutVersion != 0 {
-			version = fmt.Sprintf("%d", *cmdPutVersion)
-		}
-		err := unicreds.PutSecret(*alias, *cmdPutName, *cmdPutSecret, version)
+		version, err := unicreds.ResolveVersion(*cmdPutName, *cmdPutVersion)
 		if err != nil {
 			printFatalError(err)
 		}
-		fmt.Printf("%s has been stored\n", *cmdPutName)
+
+		err = unicreds.PutSecret(*alias, *cmdPutName, *cmdPutSecret, version)
+		if err != nil {
+			printFatalError(err)
+		}
+		log.WithFields(log.Fields{"name": *cmdPutName, "version": version}).Info("stored")
 	case cmdPutFile.FullCommand():
-		var version string
-		if *cmdPutFileVersion != 0 {
-			version = fmt.Sprintf("%d", *cmdPutFileVersion)
+		version, err := unicreds.ResolveVersion(*cmdPutFileName, *cmdPutFileVersion)
+		if err != nil {
+			printFatalError(err)
 		}
 
 		data, err := ioutil.ReadFile(*cmdPutFileSecretPath)
@@ -94,9 +100,9 @@ func main() {
 		if err != nil {
 			printFatalError(err)
 		}
-		fmt.Printf("%s has been stored\n", *cmdPutFileName)
+		log.WithFields(log.Fields{"name": *cmdPutName, "version": version}).Info("stored")
 	case cmdList.FullCommand():
-		creds, err := unicreds.ListSecrets()
+		creds, err := unicreds.ListSecrets(*cmdListAll)
 		if err != nil {
 			printFatalError(err)
 		}
@@ -113,7 +119,7 @@ func main() {
 		}
 		table.Render()
 	case cmdGetAll.FullCommand():
-		creds, err := unicreds.ListSecrets()
+		creds, err := unicreds.GetAllSecrets(true)
 		if err != nil {
 			printFatalError(err)
 		}
@@ -138,6 +144,6 @@ func main() {
 }
 
 func printFatalError(err error) {
-	fmt.Fprintf(os.Stderr, "error occured: %v\n", err)
+	log.WithError(err).Error("failed")
 	os.Exit(1)
 }

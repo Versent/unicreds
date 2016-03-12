@@ -4,9 +4,6 @@ VERSION=1.0.5
 GO15VENDOREXPERIMENT := 1
 ITERATION := 1
 
-vendor:
-	godep save -d -t
-
 build:
 	rm -rf build && mkdir build
 	mkdir -p build/Linux  && GOOS=linux  go build -ldflags "-X main.Version=$(VERSION)" -o build/Linux/$(NAME) ./cmd/unicreds
