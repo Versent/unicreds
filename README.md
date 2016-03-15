@@ -50,7 +50,14 @@ Commands:
 
 # install
 
-At the moment the easiest way to install this tool is just to download it from the github releases.
+If your on OSX you can install unicreds using homebrew now!
+
+```
+brew tap versent/homebrew-taps
+brew install unicreds
+```
+
+Otherwise grab an archive from the [github releases page](https://github.com/Versent/unicreds/releases).
 
 # why
 
