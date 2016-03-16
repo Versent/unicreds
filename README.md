@@ -1,6 +1,6 @@
 # unicreds
 
-unicreds is currently a pretty faithful port of [credstash](https://github.com/fugue/credstash) to [golang](https://golang.org/).
+Unicreds is currently a pretty faithful port of [credstash](https://github.com/fugue/credstash) to [golang](https://golang.org/).
 
 # overview
 
