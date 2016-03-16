@@ -10,8 +10,13 @@ build:
 	mkdir -p build/Darwin && GOOS=darwin go build -ldflags "-X main.Version=$(VERSION)" -o build/Darwin/$(NAME) ./cmd/unicreds
 	mkdir -p build/Darwin && GOOS=windows go build -ldflags "-X main.Version=$(VERSION)" -o build/Windows/$(NAME).exe ./cmd/unicreds
 
+
+fmt:
+	gofmt -w=true $$(find . -type f -name '*.go')
+	goimports -w=true -d $$(find . -type f -name '*.go')
+
 test:
-	go test ./...
+	go test -v ./...
 
 release: build
 	git push origin master
@@ -27,4 +32,4 @@ packages:
 	cp build/Linux/unicreds stage/usr/bin
 	fpm --name $(NAME) -a x86_64 -t rpm -s dir --version $(VERSION) --iteration $(ITERATION) -C stage -p package/$(NAME)-$(VERSION)_$(ITERATION).rpm usr
 
-.PHONY: vendor build test release
+.PHONY: build fmt test release packages
