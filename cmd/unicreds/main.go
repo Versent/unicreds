@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"net/http"
 
 	"github.com/apex/log"
 	"github.com/apex/log/handlers/cli"
@@ -11,6 +12,10 @@ import (
 	"github.com/alecthomas/kingpin"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/versent/unicreds"
+)
+
+const (
+	zoneUrl = "http://169.254.169.254/latest/meta-data/placement/availability-zone"
 )
 
 var (
@@ -56,10 +61,17 @@ func main() {
 
 	command := kingpin.MustParse(app.Parse(os.Args[1:]))
 
-	// update the aws config overrides if present
 	if *region != "" {
-		unicreds.SetDynamoDBConfig(&aws.Config{Region: region})
-		unicreds.SetKMSConfig(&aws.Config{Region: region})
+		// update the aws config overrides if present
+		setRegion(region)
+	} else {
+		// or try to get our region based on instance metadata
+		r, err := getRegion()
+		if err != nil {
+			printFatalError(err)
+		}
+
+		setRegion(r)
 	}
 
 	switch command {
@@ -141,6 +153,29 @@ func main() {
 			printFatalError(err)
 		}
 	}
+}
+
+func getRegion() (*string, error) {
+	// Use meta-data to get our region
+	response, err := http.Get(zoneUrl)
+	if err != nil {
+		return nil, err
+	}
+
+	defer response.Body.Close()
+	contents, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	// Strip last char
+	r := string(contents[0:len(string(contents))-1])
+	return &r, nil
+}
+
+func setRegion(region *string) {
+	unicreds.SetDynamoDBConfig(&aws.Config{Region: region})
+	unicreds.SetKMSConfig(&aws.Config{Region: region})
 }
 
 func printFatalError(err error) {
