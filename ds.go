@@ -295,6 +295,9 @@ func PutSecret(alias, name, secret, version string) error {
 	wrappedKey := dk.CiphertextBlob
 
 	ctext, err := Encrypt(dataKey, []byte(secret))
+	if err != nil {
+		return err
+	}
 
 	b64hmac := ComputeHmac256(ctext, hmacKey)
 
