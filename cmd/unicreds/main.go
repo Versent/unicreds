@@ -11,7 +11,7 @@ import (
 
 	"github.com/alecthomas/kingpin"
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/versent/unicreds"
+	"github.com/atlassian/unicreds"
 )
 
 const (
