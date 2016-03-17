@@ -1,0 +1,22 @@
+language: go
+go:
+    - 1.5
+    - 1.6
+    - tip
+
+install:
+    - echo noop
+
+env:
+    - "PATH=/home/travis/gopath/bin:$PATH"
+
+script:
+    - go get -u github.com/golang/lint/golint
+    - go get -u golang.org/x/tools/cmd/goimports
+    - golint ./...
+    - make test
+
+matix:
+    fast_finish: true
+    allow_failures:
+        - go: tip
