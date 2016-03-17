@@ -9,7 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/atlassian/unicreds/mocks"
+	"github.com/versent/unicreds/mocks"
 )
 
 func init() {
