@@ -1,3 +1,6 @@
+[![Build
+status](https://travis-ci.org/versent/unicreds.svg)](https://travis-ci.org/versent/unicreds)
+
 # unicreds
 
 Unicreds is currently a pretty faithful port of [credstash](https://github.com/fugue/credstash) to [golang](https://golang.org/).
