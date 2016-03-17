@@ -1,5 +1,4 @@
-[![Build
-status](https://travis-ci.org/versent/unicreds.svg)](https://travis-ci.org/versent/unicreds)
+[![Build Status](https://travis-ci.org/Versent/unicreds.svg?branch=master)](https://travis-ci.org/Versent/unicreds)
 
 # unicreds
 
