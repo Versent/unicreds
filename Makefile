@@ -17,6 +17,14 @@ fmt:
 test:
 	go test -v ./...
 
+updatedeps:
+	go list ./... \
+        | xargs go list -f '{{join .Deps "\n"}}' \
+        | grep -v unicreds \
+        | grep -v '/internal/' \
+        | sort -u \
+        | xargs go get -f -u -v
+
 watch:
 	$GOPATH/bin/goconvey -port 9090
 
