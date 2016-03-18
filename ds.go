@@ -3,6 +3,8 @@ package unicreds
 import (
 	"encoding/base64"
 	"errors"
+	"io/ioutil"
+	"net/http"
 	"sort"
 	"strconv"
 	"time"
@@ -27,6 +29,8 @@ const (
 	CreatedAtNotAvailable = "Not Available"
 
 	tableCreateTimeout = 30 * time.Second
+
+	zoneURL = "http://169.254.169.254/latest/meta-data/placement/availability-zone"
 )
 
 var (
@@ -42,12 +46,19 @@ var (
 	ErrTimeout = errors.New("Timed out waiting for dynamodb table to become active")
 )
 
+// Unicreds holds common state
+type Unicreds struct {
+	DecryptedCredentials []*DecryptedCredential
+	Version              string
+	Credentials          []*Credential
+}
+
 func init() {
 	dynamoSvc = dynamodb.New(session.New(), aws.NewConfig())
 }
 
 // SetDynamoDBConfig override the default aws configuration
-func SetDynamoDBConfig(config *aws.Config) {
+func setDynamoDBConfig(config *aws.Config) {
 	dynamoSvc = dynamodb.New(session.New(), config)
 }
 
@@ -90,9 +101,9 @@ func (a ByVersion) Less(i, j int) bool {
 }
 
 // Setup create the table which stores credentials
-func Setup() (err error) {
+func (u Unicreds) Setup() error {
 
-	_, err = dynamoSvc.CreateTable(&dynamodb.CreateTableInput{
+	_, err := dynamoSvc.CreateTable(&dynamodb.CreateTableInput{
 		AttributeDefinitions: []*dynamodb.AttributeDefinition{
 			{
 				AttributeName: aws.String("name"),
@@ -121,18 +132,18 @@ func Setup() (err error) {
 	})
 
 	if err != nil {
-		return
+		return err
 	}
 
 	log.Info("created")
 
 	err = waitForTable()
 
-	return
+	return nil
 }
 
 // GetSecret retrieve the secret from dynamodb using the name
-func GetSecret(name string) (*DecryptedCredential, error) {
+func (u Unicreds) GetSecret(name string) error {
 
 	res, err := dynamoSvc.Query(&dynamodb.QueryInput{
 		TableName: aws.String(Table),
@@ -151,26 +162,32 @@ func GetSecret(name string) (*DecryptedCredential, error) {
 	})
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	cred := new(Credential)
 
 	if len(res.Items) == 0 {
-		return nil, ErrSecretNotFound
+		return ErrSecretNotFound
 	}
 
-	err = Decode(res.Items[0], cred)
+	err = decode("ds", res.Items[0], cred)
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return decryptCredential(cred)
+	c, err := decryptCredential(cred)
+	if err != nil {
+		return err
+	}
+	u.DecryptedCredentials = append(u.DecryptedCredentials, c)
+
+	return nil
 }
 
-// GetHighestVersion look up the highest version for a given name
-func GetHighestVersion(name string) (string, error) {
+// getHighestVersion look up the highest version for a given name
+func getHighestVersion(name string) (string, error) {
 
 	res, err := dynamoSvc.Query(&dynamodb.QueryInput{
 		TableName: aws.String(Table),
@@ -206,8 +223,8 @@ func GetHighestVersion(name string) (string, error) {
 	return aws.StringValue(v.S), nil
 }
 
-// ListSecrets returns a list of all secrets
-func ListSecrets(all bool) ([]*Credential, error) {
+// ListSecrets get list of secrets
+func (u Unicreds) ListSecrets(all bool) error {
 
 	res, err := dynamoSvc.Scan(&dynamodb.ScanInput{
 		TableName: aws.String(Table),
@@ -218,23 +235,32 @@ func ListSecrets(all bool) ([]*Credential, error) {
 		ConsistentRead:       aws.Bool(true),
 	})
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	if all {
-		return decodeCredential(res.Items)
+		u.Credentials, err = decodeCredential(res.Items)
+		if err != nil {
+			return err
+		}
+		return nil
 	}
 
-	creds, err := decodeCredential(res.Items)
+	u.Credentials, err = decodeCredential(res.Items)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return filterLatest(creds)
+	u.Credentials, err = filterLatest(u.Credentials)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
-// GetAllSecrets returns a list of all secrets
-func GetAllSecrets(all bool) ([]*DecryptedCredential, error) {
+// GetAllSecrets get a list of all secrets
+func (u Unicreds) GetAllSecrets(all bool) error {
 
 	res, err := dynamoSvc.Scan(&dynamodb.ScanInput{
 		TableName: aws.String(Table),
@@ -249,30 +275,27 @@ func GetAllSecrets(all bool) ([]*DecryptedCredential, error) {
 		ConsistentRead: aws.Bool(true),
 	})
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	creds, err := decodeCredential(res.Items)
 	if err != nil {
-		return nil, err
+		return err
 	}
-
-	var results []*DecryptedCredential
 
 	for _, cred := range creds {
-
-		dcred, err := decryptCredential(cred)
+		d, err := decryptCredential(cred)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
-		results = append(results, dcred)
+		u.DecryptedCredentials = append(u.DecryptedCredentials, d)
 	}
 
-	return results, nil
+	return nil
 }
 
-// PutSecret retrieve the secret from dynamodb
+// PutSecret store a secret in dynamodb
 func PutSecret(alias, name, secret, version string) error {
 
 	kmsKey := DefaultKmsKey
@@ -285,7 +308,7 @@ func PutSecret(alias, name, secret, version string) error {
 		version = "1"
 	}
 
-	dk, err := GenerateDataKey(kmsKey, 64)
+	dk, err := generateDataKey(kmsKey, 64)
 	if err != nil {
 		return err
 	}
@@ -294,12 +317,12 @@ func PutSecret(alias, name, secret, version string) error {
 	hmacKey := dk.Plaintext[32:]
 	wrappedKey := dk.CiphertextBlob
 
-	ctext, err := Encrypt(dataKey, []byte(secret))
+	ctext, err := encrypt(dataKey, []byte(secret))
 	if err != nil {
 		return err
 	}
 
-	b64hmac := ComputeHmac256(ctext, hmacKey)
+	b64hmac := computeHmac256(ctext, hmacKey)
 
 	b64ctext := base64.StdEncoding.EncodeToString(ctext)
 
@@ -312,7 +335,7 @@ func PutSecret(alias, name, secret, version string) error {
 		CreatedAt: time.Now().Unix(),
 	}
 
-	data, err := Encode(cred)
+	data, err := encode(cred)
 
 	if err != nil {
 		return err
@@ -331,7 +354,7 @@ func PutSecret(alias, name, secret, version string) error {
 }
 
 // DeleteSecret delete a secret
-func DeleteSecret(name string) error {
+func (u Unicreds) DeleteSecret(name string) error {
 
 	res, err := dynamoSvc.Query(&dynamodb.QueryInput{
 		TableName: aws.String(Table),
@@ -355,7 +378,7 @@ func DeleteSecret(name string) error {
 	for _, item := range res.Items {
 		cred := new(Credential)
 
-		err = Decode(item, cred)
+		err = decode("ds", item, cred)
 		if err != nil {
 			return err
 		}
@@ -383,27 +406,32 @@ func DeleteSecret(name string) error {
 }
 
 // ResolveVersion calculate the version given a name and version
-func ResolveVersion(name string, version int) (string, error) {
+func (u Unicreds) ResolveVersion(name string, version int) error {
 
 	if version != 0 {
-		return strconv.Itoa(version), nil
+		u.Version = strconv.Itoa(version)
+		return nil
 	}
 
-	ver, err := GetHighestVersion(name)
+	ver, err := getHighestVersion(name)
 	if err != nil {
 		if err == ErrSecretNotFound {
-			return "1", nil
+			u.Version = strconv.Itoa(version)
+			return nil
 		}
-		return "", err
+		u.Version = ""
+		return err
 	}
 
 	if version, err = strconv.Atoi(ver); err != nil {
-		return "", err
+		u.Version = ""
+		return err
 	}
 
 	version++
+	u.Version = strconv.Itoa(version)
 
-	return strconv.Itoa(version), nil
+	return nil
 }
 
 func decryptCredential(cred *Credential) (*DecryptedCredential, error) {
@@ -414,7 +442,7 @@ func decryptCredential(cred *Credential) (*DecryptedCredential, error) {
 		return nil, err
 	}
 
-	dk, err := DecryptDataKey(wrappedKey)
+	dk, err := decryptDataKey(wrappedKey)
 
 	if err != nil {
 		return nil, err
@@ -428,13 +456,13 @@ func decryptCredential(cred *Credential) (*DecryptedCredential, error) {
 		return nil, err
 	}
 
-	hexhmac := ComputeHmac256(contents, hmacKey)
+	hexhmac := computeHmac256(contents, hmacKey)
 
 	if hexhmac != cred.Hmac {
 		return nil, ErrHmacValidationFailed
 	}
 
-	secret, err := Decrypt(dataKey, contents)
+	secret, err := decrypt(dataKey, contents)
 
 	if err != nil {
 		return nil, err
@@ -452,7 +480,7 @@ func decodeCredential(items []map[string]*dynamodb.AttributeValue) ([]*Credentia
 	for _, item := range items {
 		cred := new(Credential)
 
-		err := Decode(item, cred)
+		err := decode("ds", item, cred)
 		if err != nil {
 			return nil, err
 		}
@@ -518,4 +546,33 @@ func waitForTable() error {
 		}
 	}
 
+}
+
+// SetRegion configures the Dynamodb and KMS region
+func (u Unicreds) SetRegion(region *string) error {
+
+	if *region != "" {
+		// update the aws config overrides if present
+		setDynamoDBConfig(&aws.Config{Region: region})
+		setKMSConfig(&aws.Config{Region: region})
+		return nil
+	}
+
+	// or try to get our region based on instance metadata
+	response, err := http.Get(zoneURL)
+	if err != nil {
+		return err
+	}
+
+	defer response.Body.Close()
+	contents, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return err
+	}
+
+	// Strip last char
+	r := string(contents[0 : len(string(contents))-1])
+	setDynamoDBConfig(&aws.Config{Region: &r})
+	setKMSConfig(&aws.Config{Region: &r})
+	return nil
 }

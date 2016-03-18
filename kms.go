@@ -14,18 +14,18 @@ func init() {
 }
 
 // SetKMSConfig override the default aws configuration
-func SetKMSConfig(config *aws.Config) {
+func setKMSConfig(config *aws.Config) {
 	kmsSvc = kms.New(session.New(), config)
 }
 
 // DataKey which contains the details of the KMS key
-type DataKey struct {
+type dataKey struct {
 	CiphertextBlob []byte
 	Plaintext      []byte
 }
 
 // GenerateDataKey simplified method for generating a datakey with kms
-func GenerateDataKey(alias string, size int) (*DataKey, error) {
+func generateDataKey(alias string, size int) (*dataKey, error) {
 
 	numberOfBytes := int64(size)
 
@@ -42,14 +42,14 @@ func GenerateDataKey(alias string, size int) (*DataKey, error) {
 		return nil, err
 	}
 
-	return &DataKey{
+	return &dataKey{
 		CiphertextBlob: resp.CiphertextBlob,
 		Plaintext:      resp.Plaintext, // return the plain text key after generation
 	}, nil
 }
 
 // DecryptDataKey ask kms to decrypt the supplied data key
-func DecryptDataKey(ciphertext []byte) (*DataKey, error) {
+func decryptDataKey(ciphertext []byte) (*dataKey, error) {
 
 	params := &kms.DecryptInput{
 		CiphertextBlob:    ciphertext,
@@ -62,7 +62,7 @@ func DecryptDataKey(ciphertext []byte) (*DataKey, error) {
 		return nil, err
 	}
 
-	return &DataKey{
+	return &dataKey{
 		CiphertextBlob: ciphertext,
 		Plaintext:      resp.Plaintext, // transfer the plain text key after decryption
 	}, nil

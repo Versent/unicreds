@@ -27,7 +27,7 @@ func TestEncode(t *testing.T) {
 		},
 	}
 
-	data, err := Encode(&cred)
+	data, err := encode(&cred)
 
 	assert.Nil(t, err)
 	assert.Equal(t, expectedData, data)

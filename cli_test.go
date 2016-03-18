@@ -9,6 +9,7 @@ import (
 
 func TestRender(t *testing.T) {
 
+	u := Unicreds{}
 	tt := []struct {
 		tableFormat int
 		output      string
@@ -38,7 +39,7 @@ func TestRender(t *testing.T) {
 	for _, tv := range tt {
 		var b bytes.Buffer
 
-		table := NewTable(&b)
+		table := u.NewTable(&b)
 		table.SetHeaders(tv.headers)
 		table.SetFormat(tv.tableFormat)
 		table.BulkWrite(tv.rows)
