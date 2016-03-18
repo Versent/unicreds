@@ -13,8 +13,8 @@ import (
 )
 
 var (
-	app   = kingpin.New("unicreds", "A credential/secret storage command line tool.")
-	csv   = app.Flag("csv", "Enable csv output for table data.").Short('c').Bool()
+	app = kingpin.New("unicreds", "A credential/secret storage command line tool.")
+	csv = app.Flag("csv", "Enable csv output for table data.").Short('c').Bool()
 
 	region = app.Flag("region", "Configure the AWS region").Short('r').String()
 
@@ -71,30 +71,25 @@ func main() {
 
 	switch command {
 	case cmdSetup.FullCommand():
-		err := u.Setup()
-		if err != nil {
+		if err := u.Setup(); err != nil {
 			printFatalError(err)
 		}
 	case cmdGet.FullCommand():
-		err := u.GetSecret(*cmdGetName)
-		if err != nil {
+		if err := u.GetSecret(*cmdGetName); err != nil {
 			printFatalError(err)
 		}
-		fmt.Println(u.DecryptedCreds)
+		fmt.Println(u.DecryptedCredentials)
 	case cmdPut.FullCommand():
-		err := u.ResolveVersion(*cmdPutName, *cmdPutVersion)
-		if err != nil {
+		if err := u.ResolveVersion(*cmdPutName, *cmdPutVersion); err != nil {
 			printFatalError(err)
 		}
 
-		err = unicreds.PutSecret(*alias, *cmdPutName, *cmdPutSecret, u.Version)
-		if err != nil {
+		if err := unicreds.PutSecret(*alias, *cmdPutName, *cmdPutSecret, u.Version); err != nil {
 			printFatalError(err)
 		}
 		log.WithFields(log.Fields{"name": *cmdPutName, "version": u.Version}).Info("stored")
 	case cmdPutFile.FullCommand():
-		err := u.ResolveVersion(*cmdPutFileName, *cmdPutFileVersion)
-		if err != nil {
+		if err := u.ResolveVersion(*cmdPutFileName, *cmdPutFileVersion); err != nil {
 			printFatalError(err)
 		}
 
@@ -103,14 +98,12 @@ func main() {
 			printFatalError(err)
 		}
 
-		err = unicreds.PutSecret(*alias, *cmdPutFileName, string(data), u.Version)
-		if err != nil {
+		if err = unicreds.PutSecret(*alias, *cmdPutFileName, string(data), u.Version); err != nil {
 			printFatalError(err)
 		}
 		log.WithFields(log.Fields{"name": *cmdPutName, "version": u.Version}).Info("stored")
 	case cmdList.FullCommand():
-		err := u.ListSecrets(*cmdListAll)
-		if err != nil {
+		if err := u.ListSecrets(*cmdListAll); err != nil {
 			printFatalError(err)
 		}
 
@@ -126,8 +119,7 @@ func main() {
 		}
 		table.Render()
 	case cmdGetAll.FullCommand():
-		creds, err := unicreds.GetAllSecrets(true)
-		if err != nil {
+		if err := u.GetAllSecrets(true); err != nil {
 			printFatalError(err)
 		}
 
@@ -138,7 +130,7 @@ func main() {
 			table.SetFormat(unicreds.TableFormatCSV)
 		}
 
-		for _, cred := range creds {
+		for _, cred := range u.DecryptedCredentials {
 			table.Write([]string{cred.Name, cred.Secret})
 		}
 		table.Render()

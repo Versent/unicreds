@@ -61,7 +61,7 @@ func TestGetSecretNotFound(t *testing.T) {
 	err := u.GetSecret("test")
 
 	assert.Error(t, err, "Secret Not Found")
-	assert.Nil(t, u.DecryptedCreds)
+	assert.Nil(t, u.DecryptedCredentials)
 }
 
 func configureMock() *mocks.DynamoDBAPI {

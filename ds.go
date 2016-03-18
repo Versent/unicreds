@@ -3,11 +3,11 @@ package unicreds
 import (
 	"encoding/base64"
 	"errors"
+	"io/ioutil"
+	"net/http"
 	"sort"
 	"strconv"
 	"time"
-	"net/http"
-	"io/ioutil"
 
 	"github.com/apex/log"
 
@@ -48,9 +48,9 @@ var (
 
 // Unicreds holds common state
 type Unicreds struct {
-	DecryptedCreds *DecryptedCredential
-	Version        string
-	Credentials    []*Credential
+	DecryptedCredentials []*DecryptedCredential
+	Version              string
+	Credentials          []*Credential
 }
 
 func init() {
@@ -101,7 +101,7 @@ func (a ByVersion) Less(i, j int) bool {
 }
 
 // Setup create the table which stores credentials
-func (u Unicreds)Setup() error {
+func (u Unicreds) Setup() error {
 
 	_, err := dynamoSvc.CreateTable(&dynamodb.CreateTableInput{
 		AttributeDefinitions: []*dynamodb.AttributeDefinition{
@@ -177,15 +177,16 @@ func (u Unicreds) GetSecret(name string) error {
 		return err
 	}
 
-	u.DecryptedCreds, err = decryptCredential(cred)
+	c, err := decryptCredential(cred)
 	if err != nil {
 		return err
 	}
+	u.DecryptedCredentials = append(u.DecryptedCredentials, c)
 
 	return nil
 }
 
-// GetHighestVersion look up the highest version for a given name
+// getHighestVersion look up the highest version for a given name
 func getHighestVersion(name string) (string, error) {
 
 	res, err := dynamoSvc.Query(&dynamodb.QueryInput{
@@ -222,7 +223,7 @@ func getHighestVersion(name string) (string, error) {
 	return aws.StringValue(v.S), nil
 }
 
-// ListSecrets returns a list of all secrets
+// ListSecrets get list of secrets
 func (u Unicreds) ListSecrets(all bool) error {
 
 	res, err := dynamoSvc.Scan(&dynamodb.ScanInput{
@@ -257,8 +258,8 @@ func (u Unicreds) ListSecrets(all bool) error {
 	return nil
 }
 
-// GetAllSecrets returns a list of all secrets
-func GetAllSecrets(all bool) ([]*DecryptedCredential, error) {
+// GetAllSecrets get a list of all secrets
+func (u Unicreds) GetAllSecrets(all bool) error {
 
 	res, err := dynamoSvc.Scan(&dynamodb.ScanInput{
 		TableName: aws.String(Table),
@@ -273,30 +274,27 @@ func GetAllSecrets(all bool) ([]*DecryptedCredential, error) {
 		ConsistentRead: aws.Bool(true),
 	})
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	creds, err := decodeCredential(res.Items)
 	if err != nil {
-		return nil, err
+		return err
 	}
-
-	var results []*DecryptedCredential
 
 	for _, cred := range creds {
-
-		dcred, err := decryptCredential(cred)
+		d, err := decryptCredential(cred)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
-		results = append(results, dcred)
+		u.DecryptedCredentials = append(u.DecryptedCredentials, d)
 	}
 
-	return results, nil
+	return nil
 }
 
-// PutSecret retrieve the secret from dynamodb
+// PutSecret store a secret in dynamodb
 func PutSecret(alias, name, secret, version string) error {
 
 	kmsKey := DefaultKmsKey
@@ -564,7 +562,7 @@ func (u Unicreds) GetRegion() (*string, error) {
 	}
 
 	// Strip last char
-	r := string(contents[0:len(string(contents))-1])
+	r := string(contents[0 : len(string(contents))-1])
 	return &r, nil
 }
 
@@ -573,4 +571,3 @@ func (u Unicreds) SetRegion(region *string) {
 	setDynamoDBConfig(&aws.Config{Region: region})
 	setKMSConfig(&aws.Config{Region: region})
 }
-
