@@ -28,6 +28,8 @@ func TestCredential(t *testing.T) {
 
 func TestSetup(t *testing.T) {
 
+	u := &Unicreds{}
+
 	dsMock := configureMock()
 
 	dsMock.On("CreateTable",
@@ -40,7 +42,7 @@ func TestSetup(t *testing.T) {
 	dsMock.On("DescribeTable",
 		mock.AnythingOfType("*dynamodb.DescribeTableInput")).Return(dto, nil)
 
-	err := Setup()
+	err := u.Setup()
 
 	assert.Nil(t, err)
 }
@@ -55,10 +57,11 @@ func TestGetSecretNotFound(t *testing.T) {
 
 	dsMock.On("Query", mock.AnythingOfType("*dynamodb.QueryInput")).Return(qi, nil)
 
-	ds, err := GetSecret("test")
+	u := &Unicreds{}
+	err := u.GetSecret("test")
 
 	assert.Error(t, err, "Secret Not Found")
-	assert.Nil(t, ds)
+	assert.Nil(t, u.DecryptedCredentials)
 }
 
 func configureMock() *mocks.DynamoDBAPI {
