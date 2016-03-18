@@ -11,7 +11,7 @@ import (
 // Encrypt AES encryption method which matches the pycrypto package
 // using CTR and AES256. Note this routine seeds the counter/iv with a value of 1
 // then throws it away?!
-func Encrypt(key, plaintext []byte) ([]byte, error) {
+func encrypt(key, plaintext []byte) ([]byte, error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
@@ -28,7 +28,7 @@ func Encrypt(key, plaintext []byte) ([]byte, error) {
 
 // ComputeHmac256 compute a hmac256 signature of the supplied message and return
 // the value hex encoded
-func ComputeHmac256(message, secret []byte) string {
+func computeHmac256(message, secret []byte) string {
 	h := hmac.New(sha256.New, secret)
 	h.Write([]byte(message))
 	return hex.EncodeToString(h.Sum(nil))
@@ -37,7 +37,7 @@ func ComputeHmac256(message, secret []byte) string {
 // Decrypt AES encryption method which matches the pycrypto package
 // using CTR and AES256. Note this routine seeds the counter/iv with a value of 1
 // then throws it away?!
-func Decrypt(key, ciphertext []byte) ([]byte, error) {
+func decrypt(key, ciphertext []byte) ([]byte, error) {
 
 	block, err := aes.NewCipher(key)
 	if err != nil {

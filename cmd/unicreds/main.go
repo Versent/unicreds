@@ -4,23 +4,17 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"net/http"
 
 	"github.com/apex/log"
 	"github.com/apex/log/handlers/cli"
 
 	"github.com/alecthomas/kingpin"
-	"github.com/aws/aws-sdk-go/aws"
 	"github.com/versent/unicreds"
 )
 
-const (
-	zoneUrl = "http://169.254.169.254/latest/meta-data/placement/availability-zone"
-)
 
 var (
 	app   = kingpin.New("unicreds", "A credential/secret storage command line tool.")
-	debug = app.Flag("debug", "Enable debug mode.").Bool()
 	csv   = app.Flag("csv", "Enable csv output for table data.").Bool()
 
 	region = app.Flag("region", "Configure the AWS region").String()
@@ -65,15 +59,15 @@ func main() {
 
 	if *region != "" {
 		// update the aws config overrides if present
-		setRegion(region)
+		u.SetRegion(region)
 	} else {
 		// or try to get our region based on instance metadata
-		r, err := getRegion()
+		r, err := u.GetRegion()
 		if err != nil {
 			printFatalError(err)
 		}
 
-		setRegion(r)
+		u.SetRegion(r)
 	}
 
 	switch command {
@@ -87,7 +81,7 @@ func main() {
 		if err != nil {
 			printFatalError(err)
 		}
-		fmt.Println(u.Creds)
+		fmt.Println(u.DecryptedCreds)
 	case cmdPut.FullCommand():
 		err := u.ResolveVersion(*cmdPutName, *cmdPutVersion)
 		if err != nil {
@@ -116,19 +110,19 @@ func main() {
 		}
 		log.WithFields(log.Fields{"name": *cmdPutName, "version": u.Version}).Info("stored")
 	case cmdList.FullCommand():
-		creds, err := unicreds.ListSecrets(*cmdListAll)
+		err := u.ListSecrets(*cmdListAll)
 		if err != nil {
 			printFatalError(err)
 		}
 
-		table := unicreds.NewTable(os.Stdout)
+		table := u.NewTable(os.Stdout)
 		table.SetHeaders([]string{"Name", "Version", "Created-At"})
 
 		if *csv {
 			table.SetFormat(unicreds.TableFormatCSV)
 		}
 
-		for _, cred := range creds {
+		for _, cred := range u.Credentials {
 			table.Write([]string{cred.Name, cred.Version, cred.CreatedAtDate()})
 		}
 		table.Render()
@@ -138,7 +132,7 @@ func main() {
 			printFatalError(err)
 		}
 
-		table := unicreds.NewTable(os.Stdout)
+		table := u.NewTable(os.Stdout)
 		table.SetHeaders([]string{"Name", "Secret"})
 
 		if *csv {
@@ -150,34 +144,11 @@ func main() {
 		}
 		table.Render()
 	case cmdDelete.FullCommand():
-		err := unicreds.DeleteSecret(*cmdDeleteName)
+		err := u.DeleteSecret(*cmdDeleteName)
 		if err != nil {
 			printFatalError(err)
 		}
 	}
-}
-
-func getRegion() (*string, error) {
-	// Use meta-data to get our region
-	response, err := http.Get(zoneUrl)
-	if err != nil {
-		return nil, err
-	}
-
-	defer response.Body.Close()
-	contents, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	// Strip last char
-	r := string(contents[0:len(string(contents))-1])
-	return &r, nil
-}
-
-func setRegion(region *string) {
-	unicreds.SetDynamoDBConfig(&aws.Config{Region: region})
-	unicreds.SetKMSConfig(&aws.Config{Region: region})
 }
 
 func printFatalError(err error) {

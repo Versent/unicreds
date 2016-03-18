@@ -23,7 +23,7 @@ type TableWriter struct {
 }
 
 // NewTable create a new table writer
-func NewTable(wr io.Writer) *TableWriter {
+func (u Unicreds) NewTable(wr io.Writer) *TableWriter {
 	return &TableWriter{wr: wr}
 }
 
