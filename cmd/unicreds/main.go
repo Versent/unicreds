@@ -20,10 +20,10 @@ const (
 
 var (
 	app   = kingpin.New("unicreds", "A credential/secret storage command line tool.")
-	debug = app.Flag("debug", "Enable debug mode.").Bool()
-	csv   = app.Flag("csv", "Enable csv output for table data.").Bool()
+	debug = app.Flag("debug", "Enable debug mode.").Short('d').Bool()
+	csv   = app.Flag("csv", "Enable csv output for table data.").Short('c').Bool()
 
-	region = app.Flag("region", "Configure the AWS region").String()
+	region = app.Flag("region", "Configure the AWS region").Short('r').String()
 
 	alias = app.Flag("alias", "KMS key alias.").Default("alias/credstash").String()
 
