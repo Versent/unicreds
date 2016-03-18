@@ -56,17 +56,9 @@ func main() {
 
 	u := unicreds.Unicreds{}
 
-	if *region != "" {
-		// update the aws config overrides if present
-		u.SetRegion(region)
-	} else {
-		// or try to get our region based on instance metadata
-		r, err := u.GetRegion()
-		if err != nil {
-			printFatalError(err)
-		}
-
-		u.SetRegion(r)
+	err := u.SetRegion(region)
+	if err != nil {
+		printFatalError(err)
 	}
 
 	switch command {

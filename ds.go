@@ -243,6 +243,7 @@ func (u Unicreds) ListSecrets(all bool) error {
 		if err != nil {
 			return err
 		}
+		return nil
 	}
 
 	u.Credentials, err = decodeCredential(res.Items)
@@ -250,7 +251,7 @@ func (u Unicreds) ListSecrets(all bool) error {
 		return err
 	}
 
-	u.Credentials, err =  filterLatest(u.Credentials)
+	u.Credentials, err = filterLatest(u.Credentials)
 	if err != nil {
 		return err
 	}
@@ -547,27 +548,31 @@ func waitForTable() error {
 
 }
 
-// GetRegion tries to resolve region  using instance metadata
-func (u Unicreds) GetRegion() (*string, error) {
-	// Use meta-data to get our region
+// SetRegion configures the Dynamodb and KMS region
+func (u Unicreds) SetRegion(region *string) error {
+
+	if *region != "" {
+		// update the aws config overrides if present
+		setDynamoDBConfig(&aws.Config{Region: region})
+		setKMSConfig(&aws.Config{Region: region})
+		return nil
+	}
+
+	// or try to get our region based on instance metadata
 	response, err := http.Get(zoneURL)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	defer response.Body.Close()
 	contents, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// Strip last char
 	r := string(contents[0 : len(string(contents))-1])
-	return &r, nil
-}
-
-// SetRegion sets DynamoDB and KMS config
-func (u Unicreds) SetRegion(region *string) {
-	setDynamoDBConfig(&aws.Config{Region: region})
-	setKMSConfig(&aws.Config{Region: region})
+	setDynamoDBConfig(&aws.Config{Region: &r})
+	setKMSConfig(&aws.Config{Region: &r})
+	return nil
 }
