@@ -9,60 +9,44 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 )
 
-// Decode decode the supplied struct from the dynamodb result map
-//
-// NOTE: this function needs a lot more validation and refinement.
-func Decode(data map[string]*dynamodb.AttributeValue, rawVal interface{}) error {
-	val := reflect.ValueOf(rawVal)
-	if val.Kind() != reflect.Ptr {
-		return errors.New("result must be a pointer")
-	}
-
-	val = val.Elem()
-	if !val.CanAddr() {
-		return errors.New("result must be addressable (a pointer)")
-	}
-	return decode("ds", data, val)
-}
-
-func decode(name string, data map[string]*dynamodb.AttributeValue, val reflect.Value) error {
+// decode decode the supplied struct from the dynamodb result map
+func decode(name string, data map[string]*dynamodb.AttributeValue, val interface{}) (err error) {
 	if data == nil {
 		// If the data is nil, then we don't set anything.
 		return nil
 	}
 
-	dataVal := reflect.ValueOf(data)
-	if !dataVal.IsValid() {
+	fields := make(map[*reflect.StructField]reflect.Value)
+
+	v := reflect.ValueOf(val)
+	if v.Kind() != reflect.Ptr {
+		return errors.New("result must be a pointer")
+	}
+
+	v = v.Elem()
+	if !v.CanAddr() {
+		return errors.New("result must be addressable (a pointer)")
+	}
+
+	d := reflect.ValueOf(data)
+	if !d.IsValid() {
 		// If the data value is invalid, then we just set the value
 		// to be the zero value.
-		val.Set(reflect.Zero(val.Type()))
+		v.Set(reflect.Zero(v.Type()))
 		return nil
 	}
 
-	var err error
-	dataKind := getKind(val)
-	switch dataKind {
-	case reflect.Struct:
-		err = decodeStruct(name, data, val)
-	default:
-		return fmt.Errorf("%s: unsupported type: %s", name, dataKind)
+	if getKind(v) != reflect.Struct {
+		return fmt.Errorf("%s: unsupported type: %s", name, getKind(v))
 	}
 
-	return err
-}
-
-func decodeStruct(name string, data map[string]*dynamodb.AttributeValue, val reflect.Value) (err error) {
-
-	fields := make(map[*reflect.StructField]reflect.Value)
-
-	structVal := val
-	structType := structVal.Type()
+	structType := v.Type()
 
 	for i := 0; i < structType.NumField(); i++ {
 		fieldType := structType.Field(i)
 
 		// Normal struct field, store it away
-		fields[&fieldType] = structVal.Field(i)
+		fields[&fieldType] = v.Field(i)
 	}
 
 	for fieldType, field := range fields {
@@ -73,16 +57,15 @@ func decodeStruct(name string, data map[string]*dynamodb.AttributeValue, val ref
 			fieldName = tagValue
 		}
 
-		keyVal := data[fieldName]
-		if keyVal == nil {
+		if k := data[fieldName]; k == nil {
 			continue
 		}
 
 		switch getKind(field) {
 		case reflect.String:
-			err = decodeString(fieldName, keyVal, field)
+			err = decodeString(fieldName, data[fieldName], field)
 		case reflect.Int:
-			err = decodeInt(fieldName, keyVal, field)
+			err = decodeInt(fieldName, data[fieldName], field)
 		default:
 			return fmt.Errorf("%s: unsupported type: %s", fieldName, getKind(field))
 		}

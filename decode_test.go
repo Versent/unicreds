@@ -25,7 +25,7 @@ func TestDecode(t *testing.T) {
 		},
 	}
 
-	err := Decode(data, &cred)
+	err := decode("ds", data, &cred)
 	if err != nil {
 		fmt.Printf("%+v\n", err)
 	}

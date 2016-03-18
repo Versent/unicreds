@@ -171,7 +171,7 @@ func (u Unicreds) GetSecret(name string) error {
 		return ErrSecretNotFound
 	}
 
-	err = Decode(res.Items[0], cred)
+	err = decode("ds", res.Items[0], cred)
 
 	if err != nil {
 		return err
@@ -378,7 +378,7 @@ func (u Unicreds) DeleteSecret(name string) error {
 	for _, item := range res.Items {
 		cred := new(Credential)
 
-		err = Decode(item, cred)
+		err = decode("ds", item, cred)
 		if err != nil {
 			return err
 		}
@@ -480,7 +480,7 @@ func decodeCredential(items []map[string]*dynamodb.AttributeValue) ([]*Credentia
 	for _, item := range items {
 		cred := new(Credential)
 
-		err := Decode(item, cred)
+		err := decode("ds", item, cred)
 		if err != nil {
 			return nil, err
 		}
