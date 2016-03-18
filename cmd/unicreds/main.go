@@ -61,6 +61,8 @@ func main() {
 
 	command := kingpin.MustParse(app.Parse(os.Args[1:]))
 
+	u := unicreds.Unicreds{}
+
 	if *region != "" {
 		// update the aws config overrides if present
 		setRegion(region)
@@ -76,29 +78,29 @@ func main() {
 
 	switch command {
 	case cmdSetup.FullCommand():
-		err := unicreds.Setup()
+		err := u.Setup()
 		if err != nil {
 			printFatalError(err)
 		}
 	case cmdGet.FullCommand():
-		cred, err := unicreds.GetSecret(*cmdGetName)
+		err := u.GetSecret(*cmdGetName)
 		if err != nil {
 			printFatalError(err)
 		}
-		fmt.Println(cred.Secret)
+		fmt.Println(u.Creds)
 	case cmdPut.FullCommand():
-		version, err := unicreds.ResolveVersion(*cmdPutName, *cmdPutVersion)
+		err := u.ResolveVersion(*cmdPutName, *cmdPutVersion)
 		if err != nil {
 			printFatalError(err)
 		}
 
-		err = unicreds.PutSecret(*alias, *cmdPutName, *cmdPutSecret, version)
+		err = unicreds.PutSecret(*alias, *cmdPutName, *cmdPutSecret, u.Version)
 		if err != nil {
 			printFatalError(err)
 		}
-		log.WithFields(log.Fields{"name": *cmdPutName, "version": version}).Info("stored")
+		log.WithFields(log.Fields{"name": *cmdPutName, "version": u.Version}).Info("stored")
 	case cmdPutFile.FullCommand():
-		version, err := unicreds.ResolveVersion(*cmdPutFileName, *cmdPutFileVersion)
+		err := u.ResolveVersion(*cmdPutFileName, *cmdPutFileVersion)
 		if err != nil {
 			printFatalError(err)
 		}
@@ -108,11 +110,11 @@ func main() {
 			printFatalError(err)
 		}
 
-		err = unicreds.PutSecret(*alias, *cmdPutFileName, string(data), version)
+		err = unicreds.PutSecret(*alias, *cmdPutFileName, string(data), u.Version)
 		if err != nil {
 			printFatalError(err)
 		}
-		log.WithFields(log.Fields{"name": *cmdPutName, "version": version}).Info("stored")
+		log.WithFields(log.Fields{"name": *cmdPutName, "version": u.Version}).Info("stored")
 	case cmdList.FullCommand():
 		creds, err := unicreds.ListSecrets(*cmdListAll)
 		if err != nil {

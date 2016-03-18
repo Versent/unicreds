@@ -42,6 +42,11 @@ var (
 	ErrTimeout = errors.New("Timed out waiting for dynamodb table to become active")
 )
 
+type Unicreds struct {
+	Creds *DecryptedCredential
+	Version string
+}
+
 func init() {
 	dynamoSvc = dynamodb.New(session.New(), aws.NewConfig())
 }
@@ -90,7 +95,7 @@ func (a ByVersion) Less(i, j int) bool {
 }
 
 // Setup create the table which stores credentials
-func Setup() (err error) {
+func (u Unicreds)Setup() (err error) {
 
 	_, err = dynamoSvc.CreateTable(&dynamodb.CreateTableInput{
 		AttributeDefinitions: []*dynamodb.AttributeDefinition{
@@ -132,7 +137,7 @@ func Setup() (err error) {
 }
 
 // GetSecret retrieve the secret from dynamodb using the name
-func GetSecret(name string) (*DecryptedCredential, error) {
+func (u Unicreds) GetSecret(name string) error {
 
 	res, err := dynamoSvc.Query(&dynamodb.QueryInput{
 		TableName: aws.String(Table),
@@ -151,22 +156,27 @@ func GetSecret(name string) (*DecryptedCredential, error) {
 	})
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	cred := new(Credential)
 
 	if len(res.Items) == 0 {
-		return nil, ErrSecretNotFound
+		return ErrSecretNotFound
 	}
 
 	err = Decode(res.Items[0], cred)
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return decryptCredential(cred)
+	u.Creds, err = decryptCredential(cred)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // GetHighestVersion look up the highest version for a given name
@@ -383,27 +393,32 @@ func DeleteSecret(name string) error {
 }
 
 // ResolveVersion calculate the version given a name and version
-func ResolveVersion(name string, version int) (string, error) {
+func (u Unicreds) ResolveVersion(name string, version int) error {
 
 	if version != 0 {
-		return strconv.Itoa(version), nil
+		u.Version = strconv.Itoa(version)
+		return nil
 	}
 
 	ver, err := GetHighestVersion(name)
 	if err != nil {
 		if err == ErrSecretNotFound {
-			return "1", nil
+			u.Version = strconv.Itoa(version)
+			return nil
 		}
-		return "", err
+		u.Version = ""
+		return err
 	}
 
 	if version, err = strconv.Atoi(ver); err != nil {
-		return "", err
+		u.Version = ""
+		return err
 	}
 
 	version++
+	u.Version = strconv.Itoa(version)
 
-	return strconv.Itoa(version), nil
+	return nil
 }
 
 func decryptCredential(cred *Credential) (*DecryptedCredential, error) {
