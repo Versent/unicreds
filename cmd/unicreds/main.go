@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	zoneUrl = "http://169.254.169.254/latest/meta-data/placement/availability-zone"
+	zoneURL = "http://169.254.169.254/latest/meta-data/placement/availability-zone"
 )
 
 var (
@@ -157,7 +157,7 @@ func main() {
 
 func getRegion() (*string, error) {
 	// Use meta-data to get our region
-	response, err := http.Get(zoneUrl)
+	response, err := http.Get(zoneURL)
 	if err != nil {
 		return nil, err
 	}
