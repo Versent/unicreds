@@ -128,7 +128,9 @@ func main() {
 		for _, cred := range creds {
 			table.Write([]string{cred.Name, cred.Version, cred.CreatedAtDate()})
 		}
-		table.Render()
+		if err = table.Render(); err != nil {
+			printFatalError(err)
+		}
 	case cmdGetAll.FullCommand():
 		creds, err := unicreds.GetAllSecrets(true)
 		if err != nil {
@@ -145,7 +147,10 @@ func main() {
 		for _, cred := range creds {
 			table.Write([]string{cred.Name, cred.Secret})
 		}
-		table.Render()
+
+		if err = table.Render(); err != nil {
+			printFatalError(err)
+		}
 	case cmdDelete.FullCommand():
 		err := unicreds.DeleteSecret(*cmdDeleteName)
 		if err != nil {
