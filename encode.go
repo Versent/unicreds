@@ -75,15 +75,3 @@ func encodeStruct(name string, val reflect.Value) (map[string]*dynamodb.Attribut
 
 	return data, nil
 }
-
-func encodePtr(name string, rawVal interface{}) (map[string]*dynamodb.AttributeValue, error) {
-
-	val := reflect.ValueOf(rawVal)
-
-	valType := val.Elem().Type()
-	fmt.Printf("val Type %+v\n", valType)
-
-	realVal := reflect.New(valType)
-	reflect.Copy(realVal, reflect.ValueOf(rawVal))
-	return Encode(realVal)
-}
