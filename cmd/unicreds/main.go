@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
-	"os"
 	"net/http"
+	"os"
 
 	"github.com/apex/log"
 	"github.com/apex/log/handlers/cli"
@@ -19,9 +19,8 @@ const (
 )
 
 var (
-	app   = kingpin.New("unicreds", "A credential/secret storage command line tool.")
-	debug = app.Flag("debug", "Enable debug mode.").Short('d').Bool()
-	csv   = app.Flag("csv", "Enable csv output for table data.").Short('c').Bool()
+	app = kingpin.New("unicreds", "A credential/secret storage command line tool.")
+	csv = app.Flag("csv", "Enable csv output for table data.").Short('c').Bool()
 
 	region = app.Flag("region", "Configure the AWS region").Short('r').String()
 
@@ -169,7 +168,7 @@ func getRegion() (*string, error) {
 	}
 
 	// Strip last char
-	r := string(contents[0:len(string(contents))-1])
+	r := string(contents[0 : len(string(contents))-1])
 	return &r, nil
 }
 
