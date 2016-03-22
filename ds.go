@@ -42,6 +42,13 @@ var (
 	ErrTimeout = errors.New("Timed out waiting for dynamodb table to become active")
 )
 
+// Unicreds contains Unicreds state
+type Unicreds struct {
+	DecryptedCredentials []*DecryptedCredential
+	Version              string
+	Credentials          []*Credential
+}
+
 func init() {
 	dynamoSvc = dynamodb.New(session.New(), aws.NewConfig())
 }
@@ -90,9 +97,8 @@ func (a ByVersion) Less(i, j int) bool {
 }
 
 // Setup create the table which stores credentials
-func Setup() (err error) {
-
-	_, err = dynamoSvc.CreateTable(&dynamodb.CreateTableInput{
+func (u *Unicreds) Setup() error {
+	_, err := dynamoSvc.CreateTable(&dynamodb.CreateTableInput{
 		AttributeDefinitions: []*dynamodb.AttributeDefinition{
 			{
 				AttributeName: aws.String("name"),
@@ -121,18 +127,16 @@ func Setup() (err error) {
 	})
 
 	if err != nil {
-		return
+		return err
 	}
 
 	log.Info("created")
 
-	err = waitForTable()
-
-	return
+	return waitForTable()
 }
 
 // GetSecret retrieve the secret from dynamodb using the name
-func GetSecret(name string) (*DecryptedCredential, error) {
+func (u *Unicreds) GetSecret(name string) error {
 
 	res, err := dynamoSvc.Query(&dynamodb.QueryInput{
 		TableName: aws.String(Table),
@@ -151,27 +155,32 @@ func GetSecret(name string) (*DecryptedCredential, error) {
 	})
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	cred := new(Credential)
 
 	if len(res.Items) == 0 {
-		return nil, ErrSecretNotFound
+		return ErrSecretNotFound
 	}
 
 	err = Decode(res.Items[0], cred)
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return decryptCredential(cred)
+	c, err := decryptCredential(cred)
+	if err != nil {
+		return err
+	}
+	u.DecryptedCredentials = append(u.DecryptedCredentials, c)
+
+	return nil
 }
 
 // GetHighestVersion look up the highest version for a given name
 func GetHighestVersion(name string) (string, error) {
-
 	res, err := dynamoSvc.Query(&dynamodb.QueryInput{
 		TableName: aws.String(Table),
 		ExpressionAttributeNames: map[string]*string{
@@ -206,9 +215,8 @@ func GetHighestVersion(name string) (string, error) {
 	return aws.StringValue(v.S), nil
 }
 
-// ListSecrets returns a list of all secrets
-func ListSecrets(all bool) ([]*Credential, error) {
-
+// ListSecrets get list of secrets
+func (u *Unicreds) ListSecrets(all bool) error {
 	res, err := dynamoSvc.Scan(&dynamodb.ScanInput{
 		TableName: aws.String(Table),
 		ExpressionAttributeNames: map[string]*string{
@@ -218,23 +226,32 @@ func ListSecrets(all bool) ([]*Credential, error) {
 		ConsistentRead:       aws.Bool(true),
 	})
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	if all {
-		return decodeCredential(res.Items)
+		u.Credentials, err = decodeCredential(res.Items)
+		if err != nil {
+			return err
+		}
+		return nil
 	}
 
-	creds, err := decodeCredential(res.Items)
+	u.Credentials, err = decodeCredential(res.Items)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return filterLatest(creds)
+	u.Credentials, err = filterLatest(u.Credentials)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
-// GetAllSecrets returns a list of all secrets
-func GetAllSecrets(all bool) ([]*DecryptedCredential, error) {
+// GetAllSecrets get a list of all secrets
+func (u *Unicreds) GetAllSecrets(all bool) error {
 
 	res, err := dynamoSvc.Scan(&dynamodb.ScanInput{
 		TableName: aws.String(Table),
@@ -249,30 +266,27 @@ func GetAllSecrets(all bool) ([]*DecryptedCredential, error) {
 		ConsistentRead: aws.Bool(true),
 	})
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	creds, err := decodeCredential(res.Items)
 	if err != nil {
-		return nil, err
+		return err
 	}
-
-	var results []*DecryptedCredential
 
 	for _, cred := range creds {
-
-		dcred, err := decryptCredential(cred)
+		d, err := decryptCredential(cred)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
-		results = append(results, dcred)
+		u.DecryptedCredentials = append(u.DecryptedCredentials, d)
 	}
 
-	return results, nil
+	return nil
 }
 
-// PutSecret retrieve the secret from dynamodb
+// PutSecret store a secret in dynamodb
 func PutSecret(alias, name, secret, version string) error {
 
 	kmsKey := DefaultKmsKey
@@ -383,27 +397,32 @@ func DeleteSecret(name string) error {
 }
 
 // ResolveVersion calculate the version given a name and version
-func ResolveVersion(name string, version int) (string, error) {
+func (u *Unicreds) ResolveVersion(name string, version int) error {
 
 	if version != 0 {
-		return strconv.Itoa(version), nil
+		u.Version = strconv.Itoa(version)
+		return nil
 	}
 
 	ver, err := GetHighestVersion(name)
 	if err != nil {
 		if err == ErrSecretNotFound {
-			return "1", nil
+			u.Version = strconv.Itoa(version)
+			return nil
 		}
-		return "", err
+		u.Version = ""
+		return err
 	}
 
 	if version, err = strconv.Atoi(ver); err != nil {
-		return "", err
+		u.Version = ""
+		return err
 	}
 
 	version++
+	u.Version = strconv.Itoa(version)
 
-	return strconv.Itoa(version), nil
+	return nil
 }
 
 func decryptCredential(cred *Credential) (*DecryptedCredential, error) {

@@ -60,6 +60,8 @@ func main() {
 
 	command := kingpin.MustParse(app.Parse(os.Args[1:]))
 
+	u := &unicreds.Unicreds{}
+
 	if *region != "" {
 		// update the aws config overrides if present
 		setRegion(region)
@@ -75,30 +77,25 @@ func main() {
 
 	switch command {
 	case cmdSetup.FullCommand():
-		err := unicreds.Setup()
-		if err != nil {
+		if err := u.Setup(); err != nil {
 			printFatalError(err)
 		}
 	case cmdGet.FullCommand():
-		cred, err := unicreds.GetSecret(*cmdGetName)
-		if err != nil {
+		if err := u.GetSecret(*cmdGetName); err != nil {
 			printFatalError(err)
 		}
-		fmt.Println(cred.Secret)
+		fmt.Println(u.DecryptedCredentials)
 	case cmdPut.FullCommand():
-		version, err := unicreds.ResolveVersion(*cmdPutName, *cmdPutVersion)
-		if err != nil {
+		if err := u.ResolveVersion(*cmdPutName, *cmdPutVersion); err != nil {
 			printFatalError(err)
 		}
 
-		err = unicreds.PutSecret(*alias, *cmdPutName, *cmdPutSecret, version)
-		if err != nil {
+		if err := unicreds.PutSecret(*alias, *cmdPutName, *cmdPutSecret, u.Version); err != nil {
 			printFatalError(err)
 		}
-		log.WithFields(log.Fields{"name": *cmdPutName, "version": version}).Info("stored")
+		log.WithFields(log.Fields{"name": *cmdPutName, "version": u.Version}).Info("stored")
 	case cmdPutFile.FullCommand():
-		version, err := unicreds.ResolveVersion(*cmdPutFileName, *cmdPutFileVersion)
-		if err != nil {
+		if err := u.ResolveVersion(*cmdPutFileName, *cmdPutFileVersion); err != nil {
 			printFatalError(err)
 		}
 
@@ -107,14 +104,12 @@ func main() {
 			printFatalError(err)
 		}
 
-		err = unicreds.PutSecret(*alias, *cmdPutFileName, string(data), version)
-		if err != nil {
+		if err = unicreds.PutSecret(*alias, *cmdPutFileName, string(data), u.Version); err != nil {
 			printFatalError(err)
 		}
-		log.WithFields(log.Fields{"name": *cmdPutName, "version": version}).Info("stored")
+		log.WithFields(log.Fields{"name": *cmdPutName, "version": u.Version}).Info("stored")
 	case cmdList.FullCommand():
-		creds, err := unicreds.ListSecrets(*cmdListAll)
-		if err != nil {
+		if err := u.ListSecrets(*cmdListAll); err != nil {
 			printFatalError(err)
 		}
 
@@ -125,15 +120,14 @@ func main() {
 			table.SetFormat(unicreds.TableFormatCSV)
 		}
 
-		for _, cred := range creds {
+		for _, cred := range u.Credentials {
 			table.Write([]string{cred.Name, cred.Version, cred.CreatedAtDate()})
 		}
 		if err = table.Render(); err != nil {
 			printFatalError(err)
 		}
 	case cmdGetAll.FullCommand():
-		creds, err := unicreds.GetAllSecrets(true)
-		if err != nil {
+		if err := u.GetAllSecrets(true); err != nil {
 			printFatalError(err)
 		}
 
@@ -144,7 +138,7 @@ func main() {
 			table.SetFormat(unicreds.TableFormatCSV)
 		}
 
-		for _, cred := range creds {
+		for _, cred := range u.DecryptedCredentials {
 			table.Write([]string{cred.Name, cred.Secret})
 		}
 
@@ -152,13 +146,13 @@ func main() {
 			printFatalError(err)
 		}
 	case cmdDelete.FullCommand():
-		err := unicreds.DeleteSecret(*cmdDeleteName)
-		if err != nil {
+		if err := unicreds.DeleteSecret(*cmdDeleteName); err != nil {
 			printFatalError(err)
 		}
 	}
 }
 
+// GetRegion tries to resolve region  using instance metadata
 func getRegion() (*string, error) {
 	// Use meta-data to get our region
 	response, err := http.Get(zoneURL)
