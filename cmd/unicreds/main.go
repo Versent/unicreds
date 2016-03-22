@@ -19,9 +19,8 @@ const (
 )
 
 var (
-	app   = kingpin.New("unicreds", "A credential/secret storage command line tool.")
-	debug = app.Flag("debug", "Enable debug mode.").Short('d').Bool()
-	csv   = app.Flag("csv", "Enable csv output for table data.").Short('c').Bool()
+	app = kingpin.New("unicreds", "A credential/secret storage command line tool.")
+	csv = app.Flag("csv", "Enable csv output for table data.").Short('c').Bool()
 
 	region = app.Flag("region", "Configure the AWS region").Short('r').String()
 
