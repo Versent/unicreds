@@ -42,6 +42,7 @@ var (
 	ErrTimeout = errors.New("Timed out waiting for dynamodb table to become active")
 )
 
+// Unicreds contains Unicreds state
 type Unicreds struct {
 	DecryptedCredentials []*DecryptedCredential
 	Version              string
