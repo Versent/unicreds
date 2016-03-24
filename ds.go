@@ -95,6 +95,7 @@ func (a ByVersion) Less(i, j int) bool {
 
 // Setup create the table which stores credentials
 func Setup() (err error) {
+	log.Debug("Running Setup")
 
 	_, err = dynamoSvc.CreateTable(&dynamodb.CreateTableInput{
 		AttributeDefinitions: []*dynamodb.AttributeDefinition{
@@ -128,8 +129,6 @@ func Setup() (err error) {
 		return
 	}
 
-	log.Info("created")
-
 	err = waitForTable()
 
 	return
@@ -137,6 +136,7 @@ func Setup() (err error) {
 
 // GetSecret retrieve the secret from dynamodb using the name
 func GetSecret(name string) (*DecryptedCredential, error) {
+	log.Debug("Getting secret")
 
 	res, err := dynamoSvc.Query(&dynamodb.QueryInput{
 		TableName: aws.String(Table),
@@ -175,6 +175,7 @@ func GetSecret(name string) (*DecryptedCredential, error) {
 
 // GetHighestVersion look up the highest version for a given name
 func GetHighestVersion(name string) (string, error) {
+	log.WithField("name", name).Debug("Looking up highest version")
 
 	res, err := dynamoSvc.Query(&dynamodb.QueryInput{
 		TableName: aws.String(Table),
@@ -212,6 +213,7 @@ func GetHighestVersion(name string) (string, error) {
 
 // ListSecrets returns a list of all secrets
 func ListSecrets(all bool) ([]*Credential, error) {
+	log.Debug("Listing secrets")
 
 	res, err := dynamoSvc.Scan(&dynamodb.ScanInput{
 		TableName: aws.String(Table),
@@ -239,6 +241,7 @@ func ListSecrets(all bool) ([]*Credential, error) {
 
 // GetAllSecrets returns a list of all secrets
 func GetAllSecrets(all bool) ([]*DecryptedCredential, error) {
+	log.Debug("Getting all secrets")
 
 	res, err := dynamoSvc.Scan(&dynamodb.ScanInput{
 		TableName: aws.String(Table),
@@ -278,6 +281,7 @@ func GetAllSecrets(all bool) ([]*DecryptedCredential, error) {
 
 // PutSecret retrieve the secret from dynamodb
 func PutSecret(alias, name, secret, version string) error {
+	log.Debug("Putting secret")
 
 	kmsKey := DefaultKmsKey
 
@@ -336,6 +340,7 @@ func PutSecret(alias, name, secret, version string) error {
 
 // DeleteSecret delete a secret
 func DeleteSecret(name string) error {
+	log.Debug("Deleting secret")
 
 	res, err := dynamoSvc.Query(&dynamodb.QueryInput{
 		TableName: aws.String(Table),
@@ -388,6 +393,7 @@ func DeleteSecret(name string) error {
 
 // ResolveVersion calculate the version given a name and version
 func ResolveVersion(name string, version int) (string, error) {
+	log.Debug("Resolving version")
 
 	if version != 0 {
 		return strconv.Itoa(version), nil

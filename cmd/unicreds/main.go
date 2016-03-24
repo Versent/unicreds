@@ -13,8 +13,9 @@ import (
 )
 
 var (
-	app = kingpin.New("unicreds", "A credential/secret storage command line tool.")
-	csv = app.Flag("csv", "Enable csv output for table data.").Short('c').Bool()
+	app   = kingpin.New("unicreds", "A credential/secret storage command line tool.")
+	csv   = app.Flag("csv", "Enable csv output for table data.").Short('c').Bool()
+	debug = app.Flag("debug", "Enable debug mode.").Short('d').Bool()
 
 	region = app.Flag("region", "Configure the AWS region").Short('r').String()
 
@@ -54,6 +55,10 @@ func main() {
 
 	command := kingpin.MustParse(app.Parse(os.Args[1:]))
 
+	if *debug {
+		log.SetLevel(log.DebugLevel)
+	}
+
 	unicreds.SetRegion(region)
 
 	switch command {
@@ -62,6 +67,7 @@ func main() {
 		if err != nil {
 			printFatalError(err)
 		}
+		log.Info("Created table")
 	case cmdGet.FullCommand():
 		cred, err := unicreds.GetSecret(*cmdGetName)
 		if err != nil {
