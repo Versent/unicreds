@@ -19,8 +19,9 @@ const (
 )
 
 var (
-	app = kingpin.New("unicreds", "A credential/secret storage command line tool.")
-	csv = app.Flag("csv", "Enable csv output for table data.").Short('c').Bool()
+	app   = kingpin.New("unicreds", "A credential/secret storage command line tool.")
+	csv   = app.Flag("csv", "Enable csv output for table data.").Short('c').Bool()
+	debug = app.Flag("debug", "Enable debug mode.").Short('d').Bool()
 
 	region = app.Flag("region", "Configure the AWS region").Short('r').String()
 
@@ -60,6 +61,10 @@ func main() {
 
 	command := kingpin.MustParse(app.Parse(os.Args[1:]))
 
+	if *debug {
+		log.SetLevel(log.DebugLevel)
+	}
+
 	if *region != "" {
 		// update the aws config overrides if present
 		setRegion(region)
@@ -79,6 +84,7 @@ func main() {
 		if err != nil {
 			printFatalError(err)
 		}
+		log.Info("Created table")
 	case cmdGet.FullCommand():
 		cred, err := unicreds.GetSecret(*cmdGetName)
 		if err != nil {
@@ -161,6 +167,7 @@ func main() {
 
 func getRegion() (*string, error) {
 	// Use meta-data to get our region
+	log.Debug("Fetching meta data")
 	response, err := http.Get(zoneURL)
 	if err != nil {
 		return nil, err
@@ -178,6 +185,7 @@ func getRegion() (*string, error) {
 }
 
 func setRegion(region *string) {
+	log.WithField("region", *region).Debug("Setting region")
 	unicreds.SetDynamoDBConfig(&aws.Config{Region: region})
 	unicreds.SetKMSConfig(&aws.Config{Region: region})
 }
