@@ -185,7 +185,7 @@ func getRegion() (*string, error) {
 }
 
 func setRegion(region *string) {
-	log.Debug("Setting region")
+	log.WithField("region", *region).Debug("Setting region")
 	unicreds.SetDynamoDBConfig(&aws.Config{Region: region})
 	unicreds.SetKMSConfig(&aws.Config{Region: region})
 }

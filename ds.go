@@ -6,7 +6,6 @@ import (
 	"sort"
 	"strconv"
 	"time"
-	"fmt"
 
 	"github.com/apex/log"
 
@@ -172,7 +171,7 @@ func GetSecret(name string) (*DecryptedCredential, error) {
 
 // GetHighestVersion look up the highest version for a given name
 func GetHighestVersion(name string) (string, error) {
-	log.Debug(fmt.Sprintf("Looking up highest version for %s", name))
+	log.WithField("name", name).Debug("Looking up highest version")
 
 	res, err := dynamoSvc.Query(&dynamodb.QueryInput{
 		TableName: aws.String(Table),
