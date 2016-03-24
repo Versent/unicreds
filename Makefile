@@ -41,5 +41,6 @@ packages:
 	rm -rf stage && mkdir -p stage/usr/bin
 	cp build/Linux/unicreds stage/usr/bin
 	fpm --name $(NAME) -a x86_64 -t rpm -s dir --version $(VERSION) --iteration $(ITERATION) -C stage -p package/$(NAME)-$(VERSION)_$(ITERATION).rpm usr
+	fpm --name $(NAME) -a x86_64 -t deb -s dir --version $(VERSION) --iteration $(ITERATION) -C stage -p package/$(NAME)-$(VERSION)_$(ITERATION).deb usr
 
 .PHONY: build fmt test watch release packages
