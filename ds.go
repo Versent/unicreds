@@ -389,7 +389,7 @@ func DeleteSecret(name string) error {
 
 // ResolveVersion calculate the version given a name and version
 func ResolveVersion(name string, version int) (string, error) {
-	log.Info("Resolving version")
+	log.Debug("Resolving version")
 
 	if version != 0 {
 		return strconv.Itoa(version), nil
