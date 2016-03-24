@@ -570,6 +570,7 @@ func SetRegion(region *string) error {
 }
 
 func setRegion(region *string) {
+	log.WithField("region", *region).Debug("Setting region")
 	SetDynamoDBConfig(&aws.Config{Region: region})
 	SetKMSConfig(&aws.Config{Region: region})
 }
