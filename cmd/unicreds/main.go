@@ -84,6 +84,7 @@ func main() {
 		if err != nil {
 			printFatalError(err)
 		}
+		log.Info("Created table")
 	case cmdGet.FullCommand():
 		cred, err := unicreds.GetSecret(*cmdGetName)
 		if err != nil {
