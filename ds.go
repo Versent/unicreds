@@ -3,6 +3,8 @@ package unicreds
 import (
 	"encoding/base64"
 	"errors"
+	"io/ioutil"
+	"net/http"
 	"sort"
 	"strconv"
 	"time"
@@ -27,6 +29,8 @@ const (
 	CreatedAtNotAvailable = "Not Available"
 
 	tableCreateTimeout = 30 * time.Second
+
+	zoneURL = "http://169.254.169.254/latest/meta-data/placement/availability-zone"
 )
 
 var (
@@ -518,4 +522,48 @@ func waitForTable() error {
 		}
 	}
 
+}
+
+func getRegion() (*string, error) {
+	// Use meta-data to get our region
+	timeout := time.Duration(5 * time.Second)
+	client := http.Client{
+		Timeout: timeout,
+	}
+
+	response, err := client.Get(zoneURL)
+	if err != nil {
+		return nil, err
+	}
+
+	defer response.Body.Close()
+	contents, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	// Strip last char
+	r := string(contents[0 : len(string(contents))-1])
+	return &r, nil
+}
+
+func SetRegion(region *string) error {
+	if region == nil {
+		// Try to get our region based on instance metadata
+		region, err := getRegion()
+		if err != nil {
+			return err
+		}
+		// Update the aws config overrides if present
+		setRegion(region)
+		return nil
+	}
+
+	setRegion(region)
+	return nil
+}
+
+func setRegion(region *string) {
+	SetDynamoDBConfig(&aws.Config{Region: region})
+	SetKMSConfig(&aws.Config{Region: region})
 }
