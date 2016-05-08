@@ -5,6 +5,7 @@ import "github.com/stretchr/testify/mock"
 import "github.com/aws/aws-sdk-go/aws/request"
 import "github.com/aws/aws-sdk-go/service/kms"
 
+// KMSAPI provides a mock type for KMSAPI
 type KMSAPI struct {
 	mock.Mock
 }

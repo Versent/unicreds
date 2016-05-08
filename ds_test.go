@@ -138,7 +138,6 @@ func TestGetAllSecretsDecryptFailed(t *testing.T) {
 
 	assert.Nil(t, err)
 	assert.Len(t, ds, 0)
-
 }
 
 func TestListSecrets(t *testing.T) {
@@ -156,7 +155,6 @@ func TestListSecrets(t *testing.T) {
 
 	assert.Nil(t, err)
 	assert.Len(t, ds, 1)
-
 }
 
 func configureMock() (*mocks.DynamoDBAPI, *mocks.KMSAPI) {
