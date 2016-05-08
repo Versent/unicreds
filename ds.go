@@ -85,8 +85,22 @@ func (a ByVersion) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
 func (a ByVersion) Less(i, j int) bool {
 	aiv, _ := strconv.Atoi(a[i].Version)
 	ajv, _ := strconv.Atoi(a[j].Version)
-
 	return aiv < ajv
+}
+
+// ByName sort by name
+type ByName []*Credential
+
+func (slice ByName) Len() int {
+	return len(slice)
+}
+
+func (slice ByName) Swap(i, j int) {
+	slice[i], slice[j] = slice[j], slice[i]
+}
+
+func (slice ByName) Less(i, j int) bool {
+	return slice[i].Name < slice[j].Name
 }
 
 // Setup create the table which stores credentials
@@ -223,16 +237,19 @@ func ListSecrets(all bool) ([]*Credential, error) {
 		return nil, err
 	}
 
-	if all {
-		return decodeCredential(res.Items)
-	}
-
 	creds, err := decodeCredential(res.Items)
 	if err != nil {
 		return nil, err
 	}
 
-	return filterLatest(creds)
+	creds, err = filterLatest(creds)
+	if err != nil {
+		return nil, err
+	}
+
+	sort.Sort(ByName(creds))
+	return creds, nil
+
 }
 
 // GetAllSecrets returns a list of all secrets
