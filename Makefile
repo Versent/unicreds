@@ -26,7 +26,7 @@ updatedeps:
         | xargs go get -f -u -v
 
 watch:
-	$GOPATH/bin/goconvey -port 9090
+	scantest
 
 release: build
 	git push origin master

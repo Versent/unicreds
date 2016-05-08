@@ -114,7 +114,7 @@ func TestGetAllSecrets(t *testing.T) {
 	dsMock.On("Scan", mock.AnythingOfType("*dynamodb.ScanInput")).Return(qs, nil)
 	kmsMock.On("Decrypt", mock.AnythingOfType("*kms.DecryptInput")).Return(ki, nil)
 
-	ds, err := GetAllSecrets(true)
+	ds, err := GetAllSecrets(false)
 
 	assert.Nil(t, err)
 	assert.Len(t, ds, 1)

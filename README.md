@@ -2,7 +2,7 @@
 
 # unicreds
 
-Unicreds is currently a pretty faithful port of [credstash](https://github.com/fugue/credstash) to [golang](https://golang.org/).
+Unicreds is currently a pretty faithful port of [credstash](https://github.com/fugue/credstash) to [Go](https://golang.org/).
 
 # overview
 
@@ -21,11 +21,12 @@ usage: unicreds [<flags>] <command> [<args> ...]
 A credential/secret storage command line tool.
 
 Flags:
-  --help                     Show context-sensitive help (also try --help-long and --help-man).
-  --debug                    Enable debug mode.
-  --csv                      Enable csv output for table data.
-  --alias="alias/credstash"  KMS key alias.
-  --version                  Show application version.
+      --help                     Show context-sensitive help (also try --help-long and --help-man).
+  -c, --csv                      Enable csv output for table data.
+  -d, --debug                    Enable debug mode.
+  -r, --region=REGION            Configure the AWS region
+      --alias="alias/credstash"  KMS key alias.
+      --version                  Show application version.
 
 Commands:
   help [<command>...]
@@ -37,17 +38,21 @@ Commands:
   get <credential>
     Get a credential from the store.
 
-  getall
-    Get all credentials from the store.
+  getall [<flags>]
+    Get latest credentials from the store.
 
-  list
-    List all credentials names and version.
+  list [<flags>]
+    List latest credentials with names and version.
 
   put <credential> <value> [<version>]
-    Put a credential in the store.
+    Put a credential into the store.
+
+  put-file <credential> <value> [<version>]
+    Put a credential from a file into the store.
 
   delete <credential>
     Delete a credential from the store.
+
 ```
 
 # install
@@ -63,7 +68,7 @@ Otherwise grab an archive from the [github releases page](https://github.com/Ver
 
 # why
 
-The number one reason for this port is platform support, getting credstash running on Windows and some older versions of Redhat Enterprise is a pain. Golang enables deployment of tools across a range of platforms with very little friction.
+The number one reason for this port is platform support, getting credstash running on Windows and some older versions of Redhat Enterprise is a pain. Go enables deployment of tools across a range of platforms with very little friction.
 
 In addition to this we have some ideas about how this tool can be expanded to support some interesting use cases we have internally.
 
@@ -71,10 +76,10 @@ That said we have learnt a lot from how credstash worked and aim to remain compa
 
 # development
 
-I use `goconvey` to watch my code and run tests on save.
+I use `scantest` to watch my code and run tests on save.
 
 ```
-go get github.com/smartystreets/goconvey
+go get github.com/smartystreets/scantest
 ```
 
 # todo
