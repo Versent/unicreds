@@ -266,7 +266,8 @@ func GetAllSecrets(all bool) ([]*DecryptedCredential, error) {
 
 		dcred, err := decryptCredential(cred)
 		if err != nil {
-			return nil, err
+			log.Debugf("unable to decrypt: %s", cred.Name)
+			continue
 		}
 
 		results = append(results, dcred)
