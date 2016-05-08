@@ -225,7 +225,7 @@ func GetHighestVersion(name string) (string, error) {
 }
 
 // ListSecrets returns a list of all secrets
-func ListSecrets(all bool) ([]*Credential, error) {
+func ListSecrets(allVersions bool) ([]*Credential, error) {
 	log.Debug("Listing secrets")
 
 	res, err := dynamoSvc.Scan(&dynamodb.ScanInput{
@@ -245,9 +245,11 @@ func ListSecrets(all bool) ([]*Credential, error) {
 		return nil, err
 	}
 
-	creds, err = filterLatest(creds)
-	if err != nil {
-		return nil, err
+	if !allVersions {
+		creds, err = filterLatest(creds)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	sort.Sort(ByName(creds))
@@ -256,7 +258,7 @@ func ListSecrets(all bool) ([]*Credential, error) {
 }
 
 // GetAllSecrets returns a list of all secrets
-func GetAllSecrets(all bool) ([]*DecryptedCredential, error) {
+func GetAllSecrets(allVersions bool) ([]*DecryptedCredential, error) {
 	log.Debug("Getting all secrets")
 
 	res, err := dynamoSvc.Scan(&dynamodb.ScanInput{
@@ -279,6 +281,15 @@ func GetAllSecrets(all bool) ([]*DecryptedCredential, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	if !allVersions {
+		creds, err = filterLatest(creds)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	sort.Sort(ByName(creds))
 
 	var results []*DecryptedCredential
 

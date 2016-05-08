@@ -27,10 +27,11 @@ var (
 	cmdGet     = app.Command("get", "Get a credential from the store.")
 	cmdGetName = cmdGet.Arg("credential", "The name of the credential to get.").Required().String()
 
-	cmdGetAll = app.Command("getall", "Get latest credentials from the store.")
+	cmdGetAll         = app.Command("getall", "Get latest credentials from the store.")
+	cmdGetAllVersions = cmdGetAll.Flag("all", "List all versions").Bool()
 
-	cmdList    = app.Command("list", "List latest credentials with names and version.")
-	cmdListAll = cmdList.Flag("all", "List all versions").Bool()
+	cmdList            = app.Command("list", "List latest credentials with names and version.")
+	cmdListAllVersions = cmdList.Flag("all", "List all versions").Bool()
 
 	cmdPut        = app.Command("put", "Put a credential into the store.")
 	cmdPutName    = cmdPut.Arg("credential", "The name of the credential to store.").Required().String()
@@ -102,7 +103,7 @@ func main() {
 		}
 		log.WithFields(log.Fields{"name": *cmdPutName, "version": version}).Info("stored")
 	case cmdList.FullCommand():
-		creds, err := unicreds.ListSecrets(*cmdListAll)
+		creds, err := unicreds.ListSecrets(*cmdListAllVersions)
 		if err != nil {
 			printFatalError(err)
 		}
@@ -121,7 +122,7 @@ func main() {
 			printFatalError(err)
 		}
 	case cmdGetAll.FullCommand():
-		creds, err := unicreds.GetAllSecrets(true)
+		creds, err := unicreds.GetAllSecrets(*cmdGetAllVersions)
 		if err != nil {
 			printFatalError(err)
 		}
