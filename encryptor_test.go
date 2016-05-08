@@ -20,7 +20,6 @@ func TestEncrypt(t *testing.T) {
 
 	assert.Nil(t, err)
 	assert.Equal(t, cdata, cipherText)
-
 }
 
 func TestDecrypt(t *testing.T) {
