@@ -12,6 +12,7 @@ import (
 	"github.com/apex/log"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
@@ -285,8 +286,12 @@ func GetAllSecrets(all bool) ([]*DecryptedCredential, error) {
 
 		dcred, err := decryptCredential(cred)
 		if err != nil {
-			log.Debugf("unable to decrypt: %s", cred.Name)
-			continue
+			if awsErr, ok := err.(awserr.Error); ok {
+				if awsErr.Code() == "AccessDeniedException" {
+					log.Debugf("KMS Access Denied to decrypt: %s", cred.Name)
+					continue
+				}
+			}
 		}
 
 		results = append(results, dcred)

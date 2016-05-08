@@ -4,6 +4,9 @@ VERSION=1.1.0
 GO15VENDOREXPERIMENT := 1
 ITERATION := 1
 
+test:
+	go test -cover -v ./...
+
 build:
 	rm -rf build && mkdir build
 	mkdir -p build/Linux  && GOOS=linux  go build -ldflags "-X main.Version=$(VERSION)" -o build/Linux/$(NAME) ./cmd/unicreds
@@ -13,9 +16,6 @@ build:
 fmt:
 	gofmt -w=true $$(find . -type f -name '*.go')
 	goimports -w=true -d $$(find . -type f -name '*.go')
-
-test:
-	go test -v ./...
 
 updatedeps:
 	go list ./... \
