@@ -29,8 +29,6 @@ const (
 	CreatedAtNotAvailable = "Not Available"
 
 	tableCreateTimeout = 30 * time.Second
-
-	zoneURL = "http://169.254.169.254/latest/meta-data/placement/availability-zone"
 )
 
 var (
@@ -569,26 +567,4 @@ func getRegion() (*string, error) {
 	// Strip last char
 	r := string(contents[0 : len(string(contents))-1])
 	return &r, nil
-}
-
-func SetRegion(region *string) error {
-	if region == nil {
-		// Try to get our region based on instance metadata
-		region, err := getRegion()
-		if err != nil {
-			return err
-		}
-		// Update the aws config overrides if present
-		setRegion(region)
-		return nil
-	}
-
-	setRegion(region)
-	return nil
-}
-
-func setRegion(region *string) {
-	log.WithField("region", *region).Debug("Setting region")
-	SetDynamoDBConfig(&aws.Config{Region: region})
-	SetKMSConfig(&aws.Config{Region: region})
 }
