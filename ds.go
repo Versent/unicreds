@@ -316,6 +316,7 @@ func PutSecret(alias, name, secret, version string) error {
 
 	dk, err := GenerateDataKey(kmsKey, 64)
 	if err != nil {
+		log.Debugf("GenerateDataKey failed: %v", err)
 		return err
 	}
 
@@ -325,6 +326,7 @@ func PutSecret(alias, name, secret, version string) error {
 
 	ctext, err := Encrypt(dataKey, []byte(secret))
 	if err != nil {
+		log.Debugf("Encrypt failed: %v", err)
 		return err
 	}
 
@@ -344,6 +346,7 @@ func PutSecret(alias, name, secret, version string) error {
 	data, err := Encode(cred)
 
 	if err != nil {
+		log.Debugf("Encode failed: %v", err)
 		return err
 	}
 
