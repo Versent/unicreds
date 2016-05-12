@@ -57,10 +57,6 @@ func (tw *TableWriter) Render() error {
 	case TableFormatCSV:
 		w := csv.NewWriter(tw.wr)
 
-		if err := w.Write(tw.headers); err != nil {
-			return err
-		}
-
 		for _, r := range tw.rows {
 			if err := w.Write(r); err != nil {
 				return err
