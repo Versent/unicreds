@@ -29,7 +29,7 @@ func TestRender(t *testing.T) {
 		},
 		{
 			tableFormat: TableFormatCSV,
-			output:      "Name,Version\ntestlogin1,testpass1\ntestlogin2,testpass2\n",
+			output:      "testlogin1,testpass1\ntestlogin2,testpass2\n",
 			headers:     []string{"Name", "Version"},
 			rows:        [][]string{{"testlogin1", "testpass1"}, {"testlogin2", "testpass2"}},
 		},
