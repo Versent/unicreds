@@ -7,15 +7,17 @@ import (
 
 	"github.com/apex/log"
 	"github.com/apex/log/handlers/cli"
+	"github.com/apex/log/handlers/json"
 
 	"github.com/alecthomas/kingpin"
 	"github.com/versent/unicreds"
 )
 
 var (
-	app   = kingpin.New("unicreds", "A credential/secret storage command line tool.")
-	csv   = app.Flag("csv", "Enable csv output for table data.").Short('c').Bool()
-	debug = app.Flag("debug", "Enable debug mode.").Short('d').Bool()
+	app     = kingpin.New("unicreds", "A credential/secret storage command line tool.")
+	csv     = app.Flag("csv", "Enable csv output for table data.").Short('c').Bool()
+	debug   = app.Flag("debug", "Enable debug mode.").Short('d').Bool()
+	logJSON = app.Flag("json", "Output results in JSON").Short('j').Bool()
 
 	region = app.Flag("region", "Configure the AWS region").Short('r').String()
 
@@ -52,9 +54,14 @@ var (
 
 func main() {
 	app.Version(Version)
-	log.SetHandler(cli.Default)
 
 	command := kingpin.MustParse(app.Parse(os.Args[1:]))
+
+	if *logJSON {
+		log.SetHandler(json.New(os.Stderr))
+	} else {
+		log.SetHandler(cli.Default)
+	}
 
 	if *debug {
 		log.SetLevel(log.DebugLevel)
@@ -68,13 +75,20 @@ func main() {
 		if err != nil {
 			printFatalError(err)
 		}
-		log.Info("Created table")
+		log.WithFields(log.Fields{"status": "success"}).Info("Created table")
 	case cmdGet.FullCommand():
 		cred, err := unicreds.GetSecret(*cmdGetName)
 		if err != nil {
 			printFatalError(err)
 		}
-		fmt.Println(cred.Secret)
+
+		if *logJSON {
+			log.WithFields(log.Fields{"name": *cmdGetName, "secret": cred.Secret, "status": "success"}).Info(cred.Secret)
+		} else {
+			// Or just print, out of backwards compatibility
+			fmt.Println(cred.Secret)
+		}
+
 	case cmdPut.FullCommand():
 		version, err := unicreds.ResolveVersion(*cmdPutName, *cmdPutVersion)
 		if err != nil {
