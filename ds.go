@@ -23,7 +23,7 @@ const (
 	DefaultKmsKey = "alias/credstash"
 
 	// CreatedAtNotAvailable returned to indicate the created at field is missing
-	// from the secret
+	// from the secret/Name
 	CreatedAtNotAvailable = "Not Available"
 
 	tableCreateTimeout = 30 * time.Second
@@ -104,7 +104,7 @@ func (slice ByName) Less(i, j int) bool {
 }
 
 // Setup create the table which stores credentials
-func Setup(Table *string) (err error) {
+func Setup(tableName *string) (err error) {
 	log.Debug("Running Setup")
 
 	_, err = dynamoSvc.CreateTable(&dynamodb.CreateTableInput{
@@ -132,24 +132,24 @@ func Setup(Table *string) (err error) {
 			ReadCapacityUnits:  aws.Int64(1),
 			WriteCapacityUnits: aws.Int64(1),
 		},
-		TableName: Table,
+		TableName: tableName,
 	})
 
 	if err != nil {
 		return
 	}
 
-	err = waitForTable(Table)
+	err = waitForTable(tableName)
 
 	return
 }
 
 // GetSecret retrieve the secret from dynamodb using the name
-func GetSecret(Table *string, name string) (*DecryptedCredential, error) {
+func GetSecret(tableName *string, name string) (*DecryptedCredential, error) {
 	log.Debug("Getting secret")
 
 	res, err := dynamoSvc.Query(&dynamodb.QueryInput{
-		TableName: Table,
+		TableName: tableName,
 		ExpressionAttributeNames: map[string]*string{
 			"#N": aws.String("name"),
 		},
@@ -184,11 +184,11 @@ func GetSecret(Table *string, name string) (*DecryptedCredential, error) {
 }
 
 // GetHighestVersion look up the highest version for a given name
-func GetHighestVersion(Table *string, name string) (string, error) {
+func GetHighestVersion(tableName *string, name string) (string, error) {
 	log.WithField("name", name).Debug("Looking up highest version")
 
 	res, err := dynamoSvc.Query(&dynamodb.QueryInput{
-		TableName: Table,
+		TableName: tableName,
 		ExpressionAttributeNames: map[string]*string{
 			"#N": aws.String("name"),
 		},
@@ -222,11 +222,11 @@ func GetHighestVersion(Table *string, name string) (string, error) {
 }
 
 // ListSecrets returns a list of all secrets
-func ListSecrets(Table *string, allVersions bool) ([]*Credential, error) {
+func ListSecrets(tableName *string, allVersions bool) ([]*Credential, error) {
 	log.Debug("Listing secrets")
 
 	res, err := dynamoSvc.Scan(&dynamodb.ScanInput{
-		TableName: Table,
+		TableName: tableName,
 		ExpressionAttributeNames: map[string]*string{
 			"#N": aws.String("name"),
 		},
@@ -255,11 +255,11 @@ func ListSecrets(Table *string, allVersions bool) ([]*Credential, error) {
 }
 
 // GetAllSecrets returns a list of all secrets
-func GetAllSecrets(Table *string, allVersions bool) ([]*DecryptedCredential, error) {
+func GetAllSecrets(tableName *string, allVersions bool) ([]*DecryptedCredential, error) {
 	log.Debug("Getting all secrets")
 
 	res, err := dynamoSvc.Scan(&dynamodb.ScanInput{
-		TableName: Table,
+		TableName: tableName,
 		AttributesToGet: []*string{
 			aws.String("name"),
 			aws.String("version"),
@@ -309,7 +309,7 @@ func GetAllSecrets(Table *string, allVersions bool) ([]*DecryptedCredential, err
 }
 
 // PutSecret retrieve the secret from dynamodb
-func PutSecret(Table *string, alias, name, secret, version string) error {
+func PutSecret(tableName *string, alias, name, secret, version string) error {
 	log.Debug("Putting secret")
 
 	kmsKey := DefaultKmsKey
@@ -359,7 +359,7 @@ func PutSecret(Table *string, alias, name, secret, version string) error {
 	}
 
 	_, err = dynamoSvc.PutItem(&dynamodb.PutItemInput{
-		TableName: Table,
+		TableName: tableName,
 		Item:      data,
 		ExpressionAttributeNames: map[string]*string{
 			"#N": aws.String("name"),
@@ -371,11 +371,11 @@ func PutSecret(Table *string, alias, name, secret, version string) error {
 }
 
 // DeleteSecret delete a secret
-func DeleteSecret(Table *string, name string) error {
+func DeleteSecret(tableName *string, name string) error {
 	log.Debug("Deleting secret")
 
 	res, err := dynamoSvc.Query(&dynamodb.QueryInput{
-		TableName: Table,
+		TableName: tableName,
 		ExpressionAttributeNames: map[string]*string{
 			"#N": aws.String("name"),
 		},
@@ -404,7 +404,7 @@ func DeleteSecret(Table *string, name string) error {
 		log.WithFields(log.Fields{"name": cred.Name, "version": cred.Version}).Info("deleting")
 
 		_, err = dynamoSvc.DeleteItem(&dynamodb.DeleteItemInput{
-			TableName: Table,
+			TableName: tableName,
 			Key: map[string]*dynamodb.AttributeValue{
 				"name": &dynamodb.AttributeValue{
 					S: aws.String(cred.Name),
@@ -424,14 +424,14 @@ func DeleteSecret(Table *string, name string) error {
 }
 
 // ResolveVersion calculate the version given a name and version
-func ResolveVersion(Table *string, name string, version int) (string, error) {
+func ResolveVersion(tableName *string, name string, version int) (string, error) {
 	log.Debug("Resolving version")
 
 	if version != 0 {
 		return strconv.Itoa(version), nil
 	}
 
-	ver, err := GetHighestVersion(Table, name)
+	ver, err := GetHighestVersion(tableName, name)
 	if err != nil {
 		if err == ErrSecretNotFound {
 			return "1", nil
@@ -526,7 +526,7 @@ func filterLatest(creds []*Credential) ([]*Credential, error) {
 	return results, nil
 }
 
-func waitForTable(Table *string) error {
+func waitForTable(tableName *string) error {
 
 	timeout := make(chan bool, 1)
 	go func() {
@@ -543,7 +543,7 @@ func waitForTable(Table *string) error {
 		case <-ticker.C:
 			// a read from ch has occurred
 			res, err := dynamoSvc.DescribeTable(&dynamodb.DescribeTableInput{
-				TableName: Table,
+				TableName: tableName,
 			})
 
 			if err != nil {
