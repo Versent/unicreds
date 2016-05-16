@@ -21,7 +21,8 @@ var (
 
 	region = app.Flag("region", "Configure the AWS region").Short('r').String()
 
-	alias = app.Flag("alias", "KMS key alias.").Default("alias/credstash").String()
+	dynamoTable = app.Flag("table", "DynamoDB table.").Default("credential-store").String()
+	alias       = app.Flag("alias", "KMS key alias.").Default("alias/credstash").String()
 
 	// commands
 	cmdSetup = app.Command("setup", "Setup the dynamodb table used to store credentials.")
@@ -71,13 +72,13 @@ func main() {
 
 	switch command {
 	case cmdSetup.FullCommand():
-		err := unicreds.Setup()
+		err := unicreds.Setup(dynamoTable)
 		if err != nil {
 			printFatalError(err)
 		}
 		log.WithFields(log.Fields{"status": "success"}).Info("Created table")
 	case cmdGet.FullCommand():
-		cred, err := unicreds.GetSecret(*cmdGetName)
+		cred, err := unicreds.GetSecret(dynamoTable, *cmdGetName)
 		if err != nil {
 			printFatalError(err)
 		}
@@ -90,18 +91,18 @@ func main() {
 		}
 
 	case cmdPut.FullCommand():
-		version, err := unicreds.ResolveVersion(*cmdPutName, *cmdPutVersion)
+		version, err := unicreds.ResolveVersion(dynamoTable, *cmdPutName, *cmdPutVersion)
 		if err != nil {
 			printFatalError(err)
 		}
 
-		err = unicreds.PutSecret(*alias, *cmdPutName, *cmdPutSecret, version)
+		err = unicreds.PutSecret(dynamoTable, *alias, *cmdPutName, *cmdPutSecret, version)
 		if err != nil {
 			printFatalError(err)
 		}
 		log.WithFields(log.Fields{"name": *cmdPutName, "version": version}).Info("stored")
 	case cmdPutFile.FullCommand():
-		version, err := unicreds.ResolveVersion(*cmdPutFileName, *cmdPutFileVersion)
+		version, err := unicreds.ResolveVersion(dynamoTable, *cmdPutFileName, *cmdPutFileVersion)
 		if err != nil {
 			printFatalError(err)
 		}
@@ -111,13 +112,13 @@ func main() {
 			printFatalError(err)
 		}
 
-		err = unicreds.PutSecret(*alias, *cmdPutFileName, string(data), version)
+		err = unicreds.PutSecret(dynamoTable, *alias, *cmdPutFileName, string(data), version)
 		if err != nil {
 			printFatalError(err)
 		}
 		log.WithFields(log.Fields{"name": *cmdPutName, "version": version}).Info("stored")
 	case cmdList.FullCommand():
-		creds, err := unicreds.ListSecrets(*cmdListAllVersions)
+		creds, err := unicreds.ListSecrets(dynamoTable, *cmdListAllVersions)
 		if err != nil {
 			printFatalError(err)
 		}
@@ -136,7 +137,7 @@ func main() {
 			printFatalError(err)
 		}
 	case cmdGetAll.FullCommand():
-		creds, err := unicreds.GetAllSecrets(*cmdGetAllVersions)
+		creds, err := unicreds.GetAllSecrets(dynamoTable, *cmdGetAllVersions)
 		if err != nil {
 			printFatalError(err)
 		}
@@ -156,7 +157,7 @@ func main() {
 			printFatalError(err)
 		}
 	case cmdDelete.FullCommand():
-		err := unicreds.DeleteSecret(*cmdDeleteName)
+		err := unicreds.DeleteSecret(dynamoTable, *cmdDeleteName)
 		if err != nil {
 			printFatalError(err)
 		}
