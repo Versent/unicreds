@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	Table       = "credential-store"
+	tableName   = "credential-store"
 	dsPlainText = []byte{
 		0x6a, 0xcf, 0xeb, 0xd6, 0xe9, 0xa6, 0x19, 0xc1,
 		0x38, 0xb9, 0xfc, 0x2d, 0x53, 0x23, 0x4d, 0x78,
@@ -61,7 +61,7 @@ func TestSetup(t *testing.T) {
 	dsMock.On("DescribeTable",
 		mock.AnythingOfType("*dynamodb.DescribeTableInput")).Return(dto, nil)
 
-	err := Setup(&Table)
+	err := Setup(&tableName)
 
 	assert.Nil(t, err)
 }
@@ -76,7 +76,7 @@ func TestGetSecretNotFound(t *testing.T) {
 
 	dsMock.On("Query", mock.AnythingOfType("*dynamodb.QueryInput")).Return(qi, nil)
 
-	ds, err := GetSecret(&Table, "test")
+	ds, err := GetSecret(&tableName, "test")
 
 	assert.Error(t, err, "Secret Not Found")
 	assert.Nil(t, ds)
@@ -95,7 +95,7 @@ func TestGetSecret(t *testing.T) {
 	dsMock.On("Query", mock.AnythingOfType("*dynamodb.QueryInput")).Return(qi, nil)
 	kmsMock.On("Decrypt", mock.AnythingOfType("*kms.DecryptInput")).Return(ki, nil)
 
-	ds, err := GetSecret(&Table, "test")
+	ds, err := GetSecret(&tableName, "test")
 
 	assert.Nil(t, err)
 	assert.Equal(t, ds.Secret, "something test 123")
@@ -115,7 +115,7 @@ func TestGetAllSecrets(t *testing.T) {
 	dsMock.On("Scan", mock.AnythingOfType("*dynamodb.ScanInput")).Return(qs, nil)
 	kmsMock.On("Decrypt", mock.AnythingOfType("*kms.DecryptInput")).Return(ki, nil)
 
-	ds, err := GetAllSecrets(&Table, false)
+	ds, err := GetAllSecrets(&tableName, false)
 
 	assert.Nil(t, err)
 	assert.Len(t, ds, 1)
@@ -135,7 +135,7 @@ func TestGetAllSecretsDecryptFailed(t *testing.T) {
 	dsMock.On("Scan", mock.AnythingOfType("*dynamodb.ScanInput")).Return(qs, nil)
 	kmsMock.On("Decrypt", mock.AnythingOfType("*kms.DecryptInput")).Return(nil, awsErr)
 
-	ds, err := GetAllSecrets(&Table, true)
+	ds, err := GetAllSecrets(&tableName, true)
 
 	assert.Nil(t, err)
 	assert.Len(t, ds, 0)
@@ -152,7 +152,7 @@ func TestListSecrets(t *testing.T) {
 
 	dsMock.On("Scan", mock.AnythingOfType("*dynamodb.ScanInput")).Return(qs, nil)
 
-	ds, err := ListSecrets(&Table, true)
+	ds, err := ListSecrets(&tableName, true)
 
 	assert.Nil(t, err)
 	assert.Len(t, ds, 1)
