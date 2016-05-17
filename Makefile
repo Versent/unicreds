@@ -1,6 +1,6 @@
 NAME=unicreds
 ARCH=$(shell uname -m)
-VERSION=1.2.1
+VERSION=1.3.0
 GO15VENDOREXPERIMENT := 1
 ITERATION := 1
 
