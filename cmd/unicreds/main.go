@@ -21,8 +21,8 @@ var (
 
 	region = app.Flag("region", "Configure the AWS region").Short('r').String()
 
-	dynamoTable = app.Flag("table", "DynamoDB table.").Default("credential-store").String()
-	alias       = app.Flag("alias", "KMS key alias.").Default("alias/credstash").String()
+	dynamoTable = app.Flag("table", "DynamoDB table.").Default("credential-store").Short('t').String()
+	alias       = app.Flag("alias", "KMS key alias.").Default("alias/credstash").Short('k').String()
 
 	// commands
 	cmdSetup = app.Command("setup", "Setup the dynamodb table used to store credentials.")
