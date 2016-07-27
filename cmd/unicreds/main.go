@@ -9,8 +9,8 @@ import (
 	"github.com/apex/log/handlers/cli"
 	"github.com/apex/log/handlers/json"
 
+	"github.com/MasteryConnect/unicreds"
 	"github.com/alecthomas/kingpin"
-	"github.com/versent/unicreds"
 )
 
 var (
@@ -27,8 +27,9 @@ var (
 	// commands
 	cmdSetup = app.Command("setup", "Setup the dynamodb table used to store credentials.")
 
-	cmdGet     = app.Command("get", "Get a credential from the store.")
-	cmdGetName = cmdGet.Arg("credential", "The name of the credential to get.").Required().String()
+	cmdGet        = app.Command("get", "Get a credential from the store.")
+	cmdGetName    = cmdGet.Arg("credential", "The name of the credential to get.").Required().String()
+	cmdGetVersion = cmdGet.Arg("version", "The version of the credential to get.").String()
 
 	cmdGetAll         = app.Command("getall", "Get latest credentials from the store.")
 	cmdGetAllVersions = cmdGetAll.Flag("all", "List all versions").Bool()
@@ -78,7 +79,7 @@ func main() {
 		}
 		log.WithFields(log.Fields{"status": "success"}).Info("Created table")
 	case cmdGet.FullCommand():
-		cred, err := unicreds.GetSecret(dynamoTable, *cmdGetName)
+		cred, err := unicreds.GetSecret(dynamoTable, *cmdGetName, *cmdGetVersion)
 		if err != nil {
 			printFatalError(err)
 		}

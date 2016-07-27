@@ -144,21 +144,32 @@ func Setup(tableName *string) (err error) {
 	return
 }
 
-// GetSecret retrieve the secret from dynamodb using the name
-func GetSecret(tableName *string, name string) (*DecryptedCredential, error) {
+// GetSecret retrieve the secret from dynamodb using the name and optionally version
+func GetSecret(tableName *string, name, version string) (*DecryptedCredential, error) {
 	log.Debug("Getting secret")
+
+	exprAttrVal := map[string]*dynamodb.AttributeValue{
+		":name": &dynamodb.AttributeValue{
+			S: aws.String(name),
+		},
+	}
+	var keyCondExpr *string
+	if len(version) > 0 {
+		exprAttrVal[":version"] = &dynamodb.AttributeValue{
+			S: aws.String(version),
+		}
+		keyCondExpr = aws.String("#N = :name AND version = :version")
+	} else {
+		keyCondExpr = aws.String("#N = :name")
+	}
 
 	res, err := dynamoSvc.Query(&dynamodb.QueryInput{
 		TableName: tableName,
 		ExpressionAttributeNames: map[string]*string{
 			"#N": aws.String("name"),
 		},
-		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
-			":name": &dynamodb.AttributeValue{
-				S: aws.String(name),
-			},
-		},
-		KeyConditionExpression: aws.String("#N = :name"),
+		ExpressionAttributeValues: exprAttrVal,
+		KeyConditionExpression:    keyCondExpr,
 		Limit:            aws.Int64(1),
 		ConsistentRead:   aws.Bool(true),
 		ScanIndexForward: aws.Bool(false), // descending order
