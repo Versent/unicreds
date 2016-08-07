@@ -23,6 +23,7 @@ var (
 
 	dynamoTable = app.Flag("table", "DynamoDB table.").Default("credential-store").Short('t').String()
 	alias       = app.Flag("alias", "KMS key alias.").Default("alias/credstash").Short('k').String()
+	encContext  = encryptionContext(app.Flag("enc-context", "Add a key value pair to the encryption context.").Short('E'))
 
 	// commands
 	cmdSetup = app.Command("setup", "Setup the dynamodb table used to store credentials.")
@@ -78,10 +79,12 @@ func main() {
 		}
 		log.WithFields(log.Fields{"status": "success"}).Info("Created table")
 	case cmdGet.FullCommand():
-		cred, err := unicreds.GetSecret(dynamoTable, *cmdGetName)
+		cred, err := unicreds.GetSecret(dynamoTable, *cmdGetName, encContext)
 		if err != nil {
 			printFatalError(err)
 		}
+
+		printEncryptionContext(encContext)
 
 		if *logJSON {
 			log.WithFields(log.Fields{"name": *cmdGetName, "secret": cred.Secret, "status": "success"}).Info(cred.Secret)
@@ -96,7 +99,9 @@ func main() {
 			printFatalError(err)
 		}
 
-		err = unicreds.PutSecret(dynamoTable, *alias, *cmdPutName, *cmdPutSecret, version)
+		printEncryptionContext(encContext)
+
+		err = unicreds.PutSecret(dynamoTable, *alias, *cmdPutName, *cmdPutSecret, version, encContext)
 		if err != nil {
 			printFatalError(err)
 		}
@@ -107,12 +112,14 @@ func main() {
 			printFatalError(err)
 		}
 
+		printEncryptionContext(encContext)
+
 		data, err := ioutil.ReadFile(*cmdPutFileSecretPath)
 		if err != nil {
 			printFatalError(err)
 		}
 
-		err = unicreds.PutSecret(dynamoTable, *alias, *cmdPutFileName, string(data), version)
+		err = unicreds.PutSecret(dynamoTable, *alias, *cmdPutFileName, string(data), version, encContext)
 		if err != nil {
 			printFatalError(err)
 		}
@@ -167,4 +174,20 @@ func main() {
 func printFatalError(err error) {
 	log.WithError(err).Error("failed")
 	os.Exit(1)
+}
+
+func printEncryptionContext(encContext *unicreds.EncryptionContextValue) {
+	if encContext == nil || len(*encContext) == 0 {
+		return
+	}
+
+	for key, value := range *encContext {
+		log.WithFields(log.Fields{"Key": key, "Value": *value}).Debug("Encryption Context")
+	}
+}
+
+func encryptionContext(s kingpin.Settings) (target *unicreds.EncryptionContextValue) {
+	target = unicreds.NewEncryptionContextValue()
+	s.SetValue((*unicreds.EncryptionContextValue)(target))
+	return
 }
