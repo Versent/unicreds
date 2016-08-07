@@ -21,11 +21,17 @@ usage: unicreds [<flags>] <command> [<args> ...]
 A credential/secret storage command line tool.
 
 Flags:
-      --help                     Show context-sensitive help (also try --help-long and --help-man).
+      --help                     Show context-sensitive help (also try --help-long and
+                                 --help-man).
   -c, --csv                      Enable csv output for table data.
   -d, --debug                    Enable debug mode.
+  -j, --json                     Output results in JSON
   -r, --region=REGION            Configure the AWS region
-      --alias="alias/credstash"  KMS key alias.
+  -t, --table="credential-store"  
+                                 DynamoDB table.
+  -k, --alias="alias/credstash"  KMS key alias.
+  -E, --enc-context=ENC-CONTEXT ...  
+                                 Add a key value pair to the encryption context.
       --version                  Show application version.
 
 Commands:

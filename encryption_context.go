@@ -27,3 +27,8 @@ func (h *EncryptionContextValue) Set(value string) error {
 func (h *EncryptionContextValue) String() string {
 	return ""
 }
+
+// IsCumulative flag this value as cumulative
+func (h *EncryptionContextValue) IsCumulative() bool {
+	return true
+}
