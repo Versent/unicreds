@@ -13,6 +13,8 @@ This command line utility automates the storage of encrypted secrets in [DynamoD
 1. Add and configure a KMS key in IAM with the alias `credstash`, ensure this is created in the correct region as the user interface for this is quite confusing.
 2. Run `unicreds setup` to create the dynamodb table in your region, ensure you have your credentials configured using the [awscli](https://aws.amazon.com/cli/).
 
+NOTE: It is really important to tune DynamoDB to your read and write requirements if your using unicreds with automation!
+
 # usage
 
 ```

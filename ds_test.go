@@ -15,8 +15,10 @@ import (
 )
 
 var (
-	tableName   = "credential-store"
-	dsPlainText = []byte{
+	tableName     = "credential-store"
+	readCapacity  = int64(4)
+	writeCapacity = int64(4)
+	dsPlainText   = []byte{
 		0x6a, 0xcf, 0xeb, 0xd6, 0xe9, 0xa6, 0x19, 0xc1,
 		0x38, 0xb9, 0xfc, 0x2d, 0x53, 0x23, 0x4d, 0x78,
 		0x85, 0x48, 0x96, 0xd6, 0xd2, 0xf6, 0xf4, 0x42,
@@ -61,7 +63,7 @@ func TestSetup(t *testing.T) {
 	dsMock.On("DescribeTable",
 		mock.AnythingOfType("*dynamodb.DescribeTableInput")).Return(dto, nil)
 
-	err := Setup(&tableName)
+	err := Setup(&tableName, &readCapacity, &writeCapacity)
 
 	assert.Nil(t, err)
 }

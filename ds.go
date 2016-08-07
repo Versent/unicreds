@@ -104,7 +104,7 @@ func (slice ByName) Less(i, j int) bool {
 }
 
 // Setup create the table which stores credentials
-func Setup(tableName *string) (err error) {
+func Setup(tableName *string, read *int64, write *int64) (err error) {
 	log.Debug("Running Setup")
 
 	_, err = dynamoSvc.CreateTable(&dynamodb.CreateTableInput{
@@ -129,8 +129,8 @@ func Setup(tableName *string) (err error) {
 			},
 		},
 		ProvisionedThroughput: &dynamodb.ProvisionedThroughput{
-			ReadCapacityUnits:  aws.Int64(1),
-			WriteCapacityUnits: aws.Int64(1),
+			ReadCapacityUnits:  read,
+			WriteCapacityUnits: write,
 		},
 		TableName: tableName,
 	})
