@@ -76,7 +76,7 @@ func TestGetSecretNotFound(t *testing.T) {
 
 	dsMock.On("Query", mock.AnythingOfType("*dynamodb.QueryInput")).Return(qi, nil)
 
-	ds, err := GetSecret(&tableName, "test")
+	ds, err := GetSecret(&tableName, "test", NewEncryptionContextValue())
 
 	assert.Error(t, err, "Secret Not Found")
 	assert.Nil(t, ds)
@@ -95,7 +95,7 @@ func TestGetSecret(t *testing.T) {
 	dsMock.On("Query", mock.AnythingOfType("*dynamodb.QueryInput")).Return(qi, nil)
 	kmsMock.On("Decrypt", mock.AnythingOfType("*kms.DecryptInput")).Return(ki, nil)
 
-	ds, err := GetSecret(&tableName, "test")
+	ds, err := GetSecret(&tableName, "test", NewEncryptionContextValue())
 
 	assert.Nil(t, err)
 	assert.Equal(t, ds.Secret, "something test 123")

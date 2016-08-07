@@ -145,7 +145,7 @@ func Setup(tableName *string) (err error) {
 }
 
 // GetSecret retrieve the secret from dynamodb using the name
-func GetSecret(tableName *string, name string) (*DecryptedCredential, error) {
+func GetSecret(tableName *string, name string, encContext *EncryptionContextValue) (*DecryptedCredential, error) {
 	log.Debug("Getting secret")
 
 	res, err := dynamoSvc.Query(&dynamodb.QueryInput{
@@ -180,7 +180,7 @@ func GetSecret(tableName *string, name string) (*DecryptedCredential, error) {
 		return nil, err
 	}
 
-	return decryptCredential(cred)
+	return decryptCredential(cred, encContext)
 }
 
 // GetHighestVersion look up the highest version for a given name
@@ -258,6 +258,9 @@ func ListSecrets(tableName *string, allVersions bool) ([]*Credential, error) {
 func GetAllSecrets(tableName *string, allVersions bool) ([]*DecryptedCredential, error) {
 	log.Debug("Getting all secrets")
 
+	// build an empty encryption context
+	encContext := NewEncryptionContextValue()
+
 	res, err := dynamoSvc.Scan(&dynamodb.ScanInput{
 		TableName: tableName,
 		AttributesToGet: []*string{
@@ -292,7 +295,7 @@ func GetAllSecrets(tableName *string, allVersions bool) ([]*DecryptedCredential,
 
 	for _, cred := range creds {
 
-		dcred, err := decryptCredential(cred)
+		dcred, err := decryptCredential(cred, encContext)
 		if err != nil {
 			if awsErr, ok := err.(awserr.Error); ok {
 				if awsErr.Code() == "AccessDeniedException" {
@@ -309,7 +312,7 @@ func GetAllSecrets(tableName *string, allVersions bool) ([]*DecryptedCredential,
 }
 
 // PutSecret retrieve the secret from dynamodb
-func PutSecret(tableName *string, alias, name, secret, version string) error {
+func PutSecret(tableName *string, alias, name, secret, version string, encContext *EncryptionContextValue) error {
 	log.Debug("Putting secret")
 
 	kmsKey := DefaultKmsKey
@@ -322,7 +325,7 @@ func PutSecret(tableName *string, alias, name, secret, version string) error {
 		version = "1"
 	}
 
-	dk, err := GenerateDataKey(kmsKey, 64)
+	dk, err := GenerateDataKey(kmsKey, encContext, 64)
 	if err != nil {
 		log.Debugf("GenerateDataKey failed: %v", err)
 		return err
@@ -448,7 +451,7 @@ func ResolveVersion(tableName *string, name string, version int) (string, error)
 	return strconv.Itoa(version), nil
 }
 
-func decryptCredential(cred *Credential) (*DecryptedCredential, error) {
+func decryptCredential(cred *Credential, encContext *EncryptionContextValue) (*DecryptedCredential, error) {
 
 	wrappedKey, err := base64.StdEncoding.DecodeString(cred.Key)
 
@@ -456,7 +459,7 @@ func decryptCredential(cred *Credential) (*DecryptedCredential, error) {
 		return nil, err
 	}
 
-	dk, err := DecryptDataKey(wrappedKey)
+	dk, err := DecryptDataKey(wrappedKey, encContext)
 
 	if err != nil {
 		return nil, err
