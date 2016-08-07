@@ -26,7 +26,9 @@ var (
 	encContext  = encryptionContext(app.Flag("enc-context", "Add a key value pair to the encryption context.").Short('E'))
 
 	// commands
-	cmdSetup = app.Command("setup", "Setup the dynamodb table used to store credentials.")
+	cmdSetup      = app.Command("setup", "Setup the dynamodb table used to store credentials.")
+	cmdSetupRead  = cmdSetup.Flag("read", "Dynamo read capacity.").Default("4").Int64()
+	cmdSetupWrite = cmdSetup.Flag("write", "Dynamo write capacity.").Default("4").Int64()
 
 	cmdGet     = app.Command("get", "Get a credential from the store.")
 	cmdGetName = cmdGet.Arg("credential", "The name of the credential to get.").Required().String()
@@ -73,7 +75,7 @@ func main() {
 
 	switch command {
 	case cmdSetup.FullCommand():
-		err := unicreds.Setup(dynamoTable)
+		err := unicreds.Setup(dynamoTable, cmdSetupRead, cmdSetupWrite)
 		if err != nil {
 			printFatalError(err)
 		}
