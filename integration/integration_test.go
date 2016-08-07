@@ -41,6 +41,8 @@ func TestIntegrationGetSecret(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, cred.Name, "Integration1")
 	assert.Equal(t, cred.Secret, "secret1")
+	assert.NotZero(t, cred.CreatedAt)
+	assert.NotZero(t, cred.Version)
 
 	creds, err := unicreds.GetAllSecrets(aws.String("credential-store"), true)
 	assert.Nil(t, err)

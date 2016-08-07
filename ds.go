@@ -53,12 +53,12 @@ func SetDynamoDBConfig(config *aws.Config) {
 
 // Credential managed credential information
 type Credential struct {
-	Name      string `ds:"name"`
-	Version   string `ds:"version"`
-	Key       string `ds:"key"`
-	Contents  string `ds:"contents"`
-	Hmac      string `ds:"hmac"`
-	CreatedAt int64  `ds:"created_at"`
+	Name      string `dynamodbav:"name"`
+	Version   string `dynamodbav:"version"`
+	Key       string `dynamodbav:"key"`
+	Contents  string `dynamodbav:"contents"`
+	Hmac      string `dynamodbav:"hmac"`
+	CreatedAt int64  `dynamodbav:"created_at"`
 }
 
 // CreatedAtDate convert the timestamp field to a date string
