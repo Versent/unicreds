@@ -31,8 +31,9 @@ var (
 	cmdSetupRead  = cmdSetup.Flag("read", "Dynamo read capacity.").Default("4").Int64()
 	cmdSetupWrite = cmdSetup.Flag("write", "Dynamo write capacity.").Default("4").Int64()
 
-	cmdGet     = app.Command("get", "Get a credential from the store.")
-	cmdGetName = cmdGet.Arg("credential", "The name of the credential to get.").Required().String()
+	cmdGet       = app.Command("get", "Get a credential from the store.")
+	cmdGetName   = cmdGet.Arg("credential", "The name of the credential to get.").Required().String()
+	cmdGetNoLine = cmdGet.Flag("noline", "Leave off the newline when emitting secret").Short('n').Bool()
 
 	cmdGetAll         = app.Command("getall", "Get latest credentials from the store.")
 	cmdGetAllVersions = cmdGetAll.Flag("all", "List all versions").Bool()
@@ -93,7 +94,7 @@ func main() {
 			log.WithFields(log.Fields{"name": *cmdGetName, "secret": cred.Secret, "status": "success"}).Info(cred.Secret)
 		} else {
 			// Or just print, out of backwards compatibility
-			fmt.Println(cred.Secret)
+			printSecret(cred.Secret, *cmdGetNoLine)
 		}
 
 	case cmdPut.FullCommand():
@@ -177,6 +178,15 @@ func main() {
 func printFatalError(err error) {
 	log.WithError(err).Error("failed")
 	os.Exit(1)
+}
+
+func printSecret(secret string, noline bool) {
+	log.WithField("noline", noline).Debug("print secret")
+	if noline {
+		fmt.Printf(secret)
+	} else {
+		fmt.Println(secret)
+	}
 }
 
 func printEncryptionContext(encContext *unicreds.EncryptionContextValue) {
