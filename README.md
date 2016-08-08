@@ -2,17 +2,26 @@
 
 # unicreds
 
-Unicreds is currently a pretty faithful port of [credstash](https://github.com/fugue/credstash) to [Go](https://golang.org/).
+Unicreds is a command line tool to manage secrets within an AWS account, the aim is to keep securely stored 
+with your systems and data so you don't have to manage them externally. It uses [DynamoDB](https://aws.amazon.com/dynamodb/) and [KMS](https://aws.amazon.com/kms/) to store and 
+encrypt these secrets. Access to these keys is controlled using [IAM](https://aws.amazon.com/iam/).
 
-# overview
-
-This command line utility automates the storage of encrypted secrets in [DynamoDB](https://aws.amazon.com/dynamodb/) using [KMS](https://aws.amazon.com/kms/) to encrypt and sign these Credentials. Access to these keys is controlled using [IAM](https://aws.amazon.com/iam/).
+Unicreds is written in [Go](https://golang.org/) and is based on [credstash](https://github.com/fugue/credstash).
 
 # setup
 
-1. Add and configure a KMS key in IAM with the alias `credstash`, ensure this is created in the correct region as the user interface for this is quite confusing.
-2. Run `unicreds setup` to create the dynamodb table in your region, ensure you have your credentials configured using the [awscli](https://aws.amazon.com/cli/).
-
+1. Create a KMS key in IAM, using an aws profile you have configured in the aws CLI. You can ommit `--profile` if you use the Default profile.
+```
+aws --region ap-southeast-2 --profile [yourawsprofile] kms create-key --query 'KeyMetadata.KeyId'
+```
+2. Assign the `credstash` alias to the key using the key id printed when you created the KMS key.
+```
+aws --region ap-southeast-2 --profile [yourawsprofile] kms create-alias --alias-name 'alias/credstash' --target-key-id "arn:aws:kms:ap-southeast-2:xxxx:key/xxxx-xxxx-xxxx-xxxx-xxxx"
+```
+3. Run unicreds setup to create the dynamodb table in your region, ensure you have your credentials configured using the [awscli](https://aws.amazon.com/cli/).
+```
+unicreds setup --region ap-southeast-2 --profile [yourawsprofile]
+```
 NOTE: It is really important to tune DynamoDB to your read and write requirements if your using unicreds with automation!
 
 # usage
@@ -29,6 +38,7 @@ Flags:
   -d, --debug                    Enable debug mode.
   -j, --json                     Output results in JSON
   -r, --region=REGION            Configure the AWS region
+  -p, --profile=PROFILE          Configure the AWS profile
   -t, --table="credential-store"  
                                  DynamoDB table.
   -k, --alias="alias/credstash"  KMS key alias.

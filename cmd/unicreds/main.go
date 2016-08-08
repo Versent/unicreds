@@ -19,7 +19,8 @@ var (
 	debug   = app.Flag("debug", "Enable debug mode.").Short('d').Bool()
 	logJSON = app.Flag("json", "Output results in JSON").Short('j').Bool()
 
-	region = app.Flag("region", "Configure the AWS region").Short('r').String()
+	region  = app.Flag("region", "Configure the AWS region").Short('r').String()
+	profile = app.Flag("profile", "Configure the AWS profile").Short('p').String()
 
 	dynamoTable = app.Flag("table", "DynamoDB table.").Default("credential-store").Short('t').String()
 	alias       = app.Flag("alias", "KMS key alias.").Default("alias/credstash").Short('k').String()
@@ -71,7 +72,7 @@ func main() {
 		log.SetLevel(log.DebugLevel)
 	}
 
-	unicreds.SetRegion(region)
+	unicreds.SetAwsConfig(region, profile)
 
 	switch command {
 	case cmdSetup.FullCommand():
