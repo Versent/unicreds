@@ -22,7 +22,7 @@ func TestIntegrationGetSecret(t *testing.T) {
 
 	var err error
 
-	unicreds.SetRegion(aws.String("us-west-2"))
+	unicreds.SetAwsConfig(aws.String("us-west-2"), nil)
 
 	encContext := unicreds.NewEncryptionContextValue()
 
