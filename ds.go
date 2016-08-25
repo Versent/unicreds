@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/apex/log"
@@ -101,6 +102,15 @@ func (slice ByName) Swap(i, j int) {
 
 func (slice ByName) Less(i, j int) bool {
 	return slice[i].Name < slice[j].Name
+}
+
+const MaxPaddingLength = 19 // Number of digits in MaxInt64
+
+// PaddedInt returns an integer left-padded with zeroes to the max-int length
+func PaddedInt(i int) string {
+	iString := strconv.Itoa(i)
+	padLength := MaxPaddingLength - len(iString)
+	return strings.Repeat("0", padLength) + strconv.Itoa(i)
 }
 
 // Setup create the table which stores credentials
@@ -322,7 +332,7 @@ func PutSecret(tableName *string, alias, name, secret, version string, encContex
 	}
 
 	if version == "" {
-		version = "1"
+		version = PaddedInt(1)
 	}
 
 	dk, err := GenerateDataKey(kmsKey, encContext, 64)
@@ -431,13 +441,13 @@ func ResolveVersion(tableName *string, name string, version int) (string, error)
 	log.Debug("Resolving version")
 
 	if version != 0 {
-		return strconv.Itoa(version), nil
+		return PaddedInt(version), nil
 	}
 
 	ver, err := GetHighestVersion(tableName, name)
 	if err != nil {
 		if err == ErrSecretNotFound {
-			return "1", nil
+			return PaddedInt(1), nil
 		}
 		return "", err
 	}
@@ -448,7 +458,7 @@ func ResolveVersion(tableName *string, name string, version int) (string, error)
 
 	version++
 
-	return strconv.Itoa(version), nil
+	return PaddedInt(version), nil
 }
 
 func decryptCredential(cred *Credential, encContext *EncryptionContextValue) (*DecryptedCredential, error) {
