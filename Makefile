@@ -43,4 +43,8 @@ packages:
 	fpm --name $(NAME) -a x86_64 -t rpm -s dir --version $(VERSION) --iteration $(ITERATION) -C stage -p package/$(NAME)-$(VERSION)_$(ITERATION).rpm usr
 	fpm --name $(NAME) -a x86_64 -t deb -s dir --version $(VERSION) --iteration $(ITERATION) -C stage -p package/$(NAME)-$(VERSION)_$(ITERATION).deb usr
 
+generate-mocks:
+	mockery -dir ../../aws/aws-sdk-go/service/kms/kmsiface --all
+	mockery -dir ../../aws/aws-sdk-go/service/dynamodb/dynamodbiface -testonly -all
+
 .PHONY: build fmt test watch release packages

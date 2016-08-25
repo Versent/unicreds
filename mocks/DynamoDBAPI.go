@@ -5,7 +5,6 @@ import "github.com/stretchr/testify/mock"
 import "github.com/aws/aws-sdk-go/aws/request"
 import "github.com/aws/aws-sdk-go/service/dynamodb"
 
-// DynamoDBAPI provides a mock type for DynamoDBAPI
 type DynamoDBAPI struct {
 	mock.Mock
 }

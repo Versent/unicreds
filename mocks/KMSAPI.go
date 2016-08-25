@@ -5,7 +5,6 @@ import "github.com/stretchr/testify/mock"
 import "github.com/aws/aws-sdk-go/aws/request"
 import "github.com/aws/aws-sdk-go/service/kms"
 
-// KMSAPI provides a mock type for KMSAPI
 type KMSAPI struct {
 	mock.Mock
 }
@@ -290,6 +289,54 @@ func (_m *KMSAPI) DeleteAlias(_a0 *kms.DeleteAliasInput) (*kms.DeleteAliasOutput
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(*kms.DeleteAliasInput) error); ok {
+		r1 = rf(_a0)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// DeleteImportedKeyMaterialRequest provides a mock function with given fields: _a0
+func (_m *KMSAPI) DeleteImportedKeyMaterialRequest(_a0 *kms.DeleteImportedKeyMaterialInput) (*request.Request, *kms.DeleteImportedKeyMaterialOutput) {
+	ret := _m.Called(_a0)
+
+	var r0 *request.Request
+	if rf, ok := ret.Get(0).(func(*kms.DeleteImportedKeyMaterialInput) *request.Request); ok {
+		r0 = rf(_a0)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*request.Request)
+		}
+	}
+
+	var r1 *kms.DeleteImportedKeyMaterialOutput
+	if rf, ok := ret.Get(1).(func(*kms.DeleteImportedKeyMaterialInput) *kms.DeleteImportedKeyMaterialOutput); ok {
+		r1 = rf(_a0)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*kms.DeleteImportedKeyMaterialOutput)
+		}
+	}
+
+	return r0, r1
+}
+
+// DeleteImportedKeyMaterial provides a mock function with given fields: _a0
+func (_m *KMSAPI) DeleteImportedKeyMaterial(_a0 *kms.DeleteImportedKeyMaterialInput) (*kms.DeleteImportedKeyMaterialOutput, error) {
+	ret := _m.Called(_a0)
+
+	var r0 *kms.DeleteImportedKeyMaterialOutput
+	if rf, ok := ret.Get(0).(func(*kms.DeleteImportedKeyMaterialInput) *kms.DeleteImportedKeyMaterialOutput); ok {
+		r0 = rf(_a0)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*kms.DeleteImportedKeyMaterialOutput)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(*kms.DeleteImportedKeyMaterialInput) error); ok {
 		r1 = rf(_a0)
 	} else {
 		r1 = ret.Error(1)
@@ -818,6 +865,102 @@ func (_m *KMSAPI) GetKeyRotationStatus(_a0 *kms.GetKeyRotationStatusInput) (*kms
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(*kms.GetKeyRotationStatusInput) error); ok {
+		r1 = rf(_a0)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetParametersForImportRequest provides a mock function with given fields: _a0
+func (_m *KMSAPI) GetParametersForImportRequest(_a0 *kms.GetParametersForImportInput) (*request.Request, *kms.GetParametersForImportOutput) {
+	ret := _m.Called(_a0)
+
+	var r0 *request.Request
+	if rf, ok := ret.Get(0).(func(*kms.GetParametersForImportInput) *request.Request); ok {
+		r0 = rf(_a0)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*request.Request)
+		}
+	}
+
+	var r1 *kms.GetParametersForImportOutput
+	if rf, ok := ret.Get(1).(func(*kms.GetParametersForImportInput) *kms.GetParametersForImportOutput); ok {
+		r1 = rf(_a0)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*kms.GetParametersForImportOutput)
+		}
+	}
+
+	return r0, r1
+}
+
+// GetParametersForImport provides a mock function with given fields: _a0
+func (_m *KMSAPI) GetParametersForImport(_a0 *kms.GetParametersForImportInput) (*kms.GetParametersForImportOutput, error) {
+	ret := _m.Called(_a0)
+
+	var r0 *kms.GetParametersForImportOutput
+	if rf, ok := ret.Get(0).(func(*kms.GetParametersForImportInput) *kms.GetParametersForImportOutput); ok {
+		r0 = rf(_a0)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*kms.GetParametersForImportOutput)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(*kms.GetParametersForImportInput) error); ok {
+		r1 = rf(_a0)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ImportKeyMaterialRequest provides a mock function with given fields: _a0
+func (_m *KMSAPI) ImportKeyMaterialRequest(_a0 *kms.ImportKeyMaterialInput) (*request.Request, *kms.ImportKeyMaterialOutput) {
+	ret := _m.Called(_a0)
+
+	var r0 *request.Request
+	if rf, ok := ret.Get(0).(func(*kms.ImportKeyMaterialInput) *request.Request); ok {
+		r0 = rf(_a0)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*request.Request)
+		}
+	}
+
+	var r1 *kms.ImportKeyMaterialOutput
+	if rf, ok := ret.Get(1).(func(*kms.ImportKeyMaterialInput) *kms.ImportKeyMaterialOutput); ok {
+		r1 = rf(_a0)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*kms.ImportKeyMaterialOutput)
+		}
+	}
+
+	return r0, r1
+}
+
+// ImportKeyMaterial provides a mock function with given fields: _a0
+func (_m *KMSAPI) ImportKeyMaterial(_a0 *kms.ImportKeyMaterialInput) (*kms.ImportKeyMaterialOutput, error) {
+	ret := _m.Called(_a0)
+
+	var r0 *kms.ImportKeyMaterialOutput
+	if rf, ok := ret.Get(0).(func(*kms.ImportKeyMaterialInput) *kms.ImportKeyMaterialOutput); ok {
+		r0 = rf(_a0)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*kms.ImportKeyMaterialOutput)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(*kms.ImportKeyMaterialInput) error); ok {
 		r1 = rf(_a0)
 	} else {
 		r1 = ret.Error(1)
