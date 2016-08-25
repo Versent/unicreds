@@ -83,7 +83,7 @@ $ unicreds -r us-west-2 -p [yourawsprofile] list
 * Store a login for `test123` from unicreds using the encryption context feature.
 ```
 $ unicreds -r us-west-2 -p [yourawsprofile] put test123 -E 'stack:123' testingsup
-   • stored                    name=test123 version=1
+   • stored                    name=test123 version=0000000000000000001
 ```
 
 * Retrieve a login for `test123` from unicreds using the encryption context feature.
@@ -99,7 +99,7 @@ $ unicreds -r us-west-2 -p [yourawsprofile] get test123 -E 'stack:12'
 	status code: 400, request id: 0fed8a0b-5ea1-11e6-b359-fd8168c3c784
 ```
 
-# refrences
+# references
 
 * [How to Protect the Integrity of Your Encrypted Data by Using AWS Key Management Service and EncryptionContext](https://blogs.aws.amazon.com/security/post/Tx2LZ6WBJJANTNW/How-to-Protect-the-Integrity-of-Your-Encrypted-Data-by-Using-AWS-Key-Management)
 
@@ -121,6 +121,10 @@ I use `scantest` to watch my code and run tests on save.
 ```
 go get github.com/smartystreets/scantest
 ```
+
+# auto-versioning
+
+If you've been using unicreds auto-versioning before September 2015, Unicreds had the [same](https://github.com/fugue/credstash/issues/51) [bug](https://github.com/Versent/unicreds/issues/34) as credstash when auto-versioning that results in a sorting error after ten versions. You should be able to run the [credstash-migrate-autoversion.py](https://github.com/fugue/credstash/blob/master/credstash-migrate-autoversion.py) script included in the root of the credstash repository to update your versions prior to using the latest version of unicreds.
 
 # todo
 
