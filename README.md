@@ -54,7 +54,7 @@ Commands:
   setup
     Setup the dynamodb table used to store credentials.
 
-  get <credential>
+  get <credential> [<version>]
     Get a credential from the store.
 
   getall [<flags>]
@@ -121,6 +121,11 @@ I use `scantest` to watch my code and run tests on save.
 ```
 go get github.com/smartystreets/scantest
 ```
+
+# testing
+You can run unit tests which mock out the KMS and DynamoDB backend using `make test`.
+
+There is an integration test you can run using `make integration`. You must set the `AWS_REGION` (default `us-west-2`), `UNICREDS_KEY_ALIAS` (default `alias/unicreds`), and `UNICREDS_TABLE_NAME` (default `credential-store`) environment variables to point to valid AWS resources.
 
 # auto-versioning
 

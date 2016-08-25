@@ -154,9 +154,9 @@ func Setup(tableName *string, read *int64, write *int64) (err error) {
 	return
 }
 
-// GetSecret retrieve the secret from dynamodb using the name
-func GetSecret(tableName *string, name string, encContext *EncryptionContextValue) (*DecryptedCredential, error) {
-	log.Debug("Getting secret")
+// GetHighestVersionSecret retrieves latest secret from dynamodb using the name
+func GetHighestVersionSecret(tableName *string, name string, encContext *EncryptionContextValue) (*DecryptedCredential, error) {
+	log.Debug("Getting highest version secret")
 
 	res, err := dynamoSvc.Query(&dynamodb.QueryInput{
 		TableName: tableName,
@@ -185,6 +185,34 @@ func GetSecret(tableName *string, name string, encContext *EncryptionContextValu
 	}
 
 	err = Decode(res.Items[0], cred)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return decryptCredential(cred, encContext)
+}
+
+// GetSecret look up a secret by name and version
+func GetSecret(tableName *string, name, version string, encContext *EncryptionContextValue) (*DecryptedCredential, error) {
+	log.Debug("Getting secret")
+
+	params := &dynamodb.GetItemInput{
+		Key: map[string]*dynamodb.AttributeValue{
+			"name":    {S: aws.String(name)},
+			"version": {S: aws.String(version)},
+		},
+		TableName: tableName,
+	}
+	res, err := dynamoSvc.GetItem(params)
+
+	cred := new(Credential)
+
+	if len(res.Item) == 0 {
+		return nil, ErrSecretNotFound
+	}
+
+	err = Decode(res.Item, cred)
 
 	if err != nil {
 		return nil, err
@@ -436,7 +464,8 @@ func DeleteSecret(tableName *string, name string) error {
 	return nil
 }
 
-// ResolveVersion calculate the version given a name and version
+// ResolveVersion converts an integer version to a string, or if a version isn't provided (0),
+// returns "1" if the secret doesn't exist or the latest version plus one (auto-increment) if it does.
 func ResolveVersion(tableName *string, name string, version int) (string, error) {
 	log.Debug("Resolving version")
 

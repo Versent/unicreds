@@ -31,9 +31,10 @@ var (
 	cmdSetupRead  = cmdSetup.Flag("read", "Dynamo read capacity.").Default("4").Int64()
 	cmdSetupWrite = cmdSetup.Flag("write", "Dynamo write capacity.").Default("4").Int64()
 
-	cmdGet       = app.Command("get", "Get a credential from the store.")
-	cmdGetName   = cmdGet.Arg("credential", "The name of the credential to get.").Required().String()
-	cmdGetNoLine = cmdGet.Flag("noline", "Leave off the newline when emitting secret").Short('n').Bool()
+	cmdGet        = app.Command("get", "Get a credential from the store.")
+	cmdGetName    = cmdGet.Arg("credential", "The name of the credential to get.").Required().String()
+	cmdGetNoLine  = cmdGet.Flag("noline", "Leave off the newline when emitting secret").Short('n').Bool()
+	cmdGetVersion = cmdGet.Arg("version", "The version of the credential to get.").Int()
 
 	cmdGetAll         = app.Command("getall", "Get latest credentials from the store.")
 	cmdGetAllVersions = cmdGetAll.Flag("all", "List all versions").Bool()
@@ -83,7 +84,13 @@ func main() {
 		}
 		log.WithFields(log.Fields{"status": "success"}).Info("Created table")
 	case cmdGet.FullCommand():
-		cred, err := unicreds.GetSecret(dynamoTable, *cmdGetName, encContext)
+		var cred *unicreds.DecryptedCredential
+		var err error
+		if *cmdGetVersion == 0 {
+			cred, err = unicreds.GetHighestVersionSecret(dynamoTable, *cmdGetName, encContext)
+		} else {
+			cred, err = unicreds.GetSecret(dynamoTable, *cmdGetName, unicreds.PaddedInt(*cmdGetVersion), encContext)
+		}
 		if err != nil {
 			printFatalError(err)
 		}

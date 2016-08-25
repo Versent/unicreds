@@ -4,6 +4,7 @@ package integration
 
 import (
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/apex/log"
@@ -21,15 +22,27 @@ func init() {
 func TestIntegrationGetSecret(t *testing.T) {
 
 	var err error
+	region := os.Getenv("AWS_REGION")
+	if region == "" {
+		region = "us-west-2"
+	}
+	alias := os.Getenv("UNICREDS_KEY_ALIAS")
+	if alias == "" {
+		alias = "alias/unicreds"
+	}
+	tableName := os.Getenv("UNICREDS_TABLE_NAME")
+	if tableName == "" {
+		tableName = "credential-store"
+	}
 
-	unicreds.SetAwsConfig(aws.String("us-west-2"), nil)
+	unicreds.SetAwsConfig(aws.String(region), nil)
 
 	encContext := unicreds.NewEncryptionContextValue()
 
 	(*encContext)["test"] = aws.String("123")
 
 	for i := 0; i < 15; i++ {
-		err = unicreds.PutSecret(aws.String("credential-store"), "alias/accounting", "Integration1", "secret1", fmt.Sprintf("%d", i), encContext)
+		err = unicreds.PutSecret(aws.String(tableName), alias, "Integration1", fmt.Sprintf("secret%d", i), unicreds.PaddedInt(i), encContext)
 		if err != nil {
 			log.Errorf("put err: %v", err)
 		}
@@ -37,25 +50,33 @@ func TestIntegrationGetSecret(t *testing.T) {
 		assert.Nil(t, err)
 	}
 
-	cred, err := unicreds.GetSecret(aws.String("credential-store"), "Integration1", encContext)
+	cred, err := unicreds.GetHighestVersionSecret(aws.String(tableName), "Integration1", encContext)
 	assert.Nil(t, err)
 	assert.Equal(t, cred.Name, "Integration1")
-	assert.Equal(t, cred.Secret, "secret1")
+	assert.Equal(t, cred.Secret, "secret14")
 	assert.NotZero(t, cred.CreatedAt)
 	assert.NotZero(t, cred.Version)
 
-	creds, err := unicreds.GetAllSecrets(aws.String("credential-store"), true)
+	for i := 0; i < 15; i++ {
+		cred, err := unicreds.GetSecret(aws.String(tableName), "Integration1", unicreds.PaddedInt(i), encContext)
+		assert.Nil(t, err)
+		assert.Equal(t, cred.Name, "Integration1")
+		assert.Equal(t, cred.Secret, fmt.Sprintf("secret%d", i))
+		assert.NotZero(t, cred.CreatedAt)
+		assert.Equal(t, cred.Version, unicreds.PaddedInt(i))
+	}
+
+	creds, err := unicreds.GetAllSecrets(aws.String(tableName), true)
 	assert.Nil(t, err)
-	assert.Len(t, creds, 24)
+	assert.Len(t, creds, 15)
 
 	// change the context and ensure this triggers an error
 	(*encContext)["test"] = aws.String("345")
 
-	cred, err = unicreds.GetSecret(aws.String("credential-store"), "Integration1", encContext)
+	cred, err = unicreds.GetHighestVersionSecret(aws.String(tableName), "Integration1", encContext)
 	assert.Error(t, err)
 	assert.Nil(t, cred)
 
-	err = unicreds.DeleteSecret(aws.String("credential-store"), "Integration1")
+	err = unicreds.DeleteSecret(aws.String(tableName), "Integration1")
 	assert.Nil(t, err)
-
 }

@@ -7,6 +7,9 @@ ITERATION := 1
 test:
 	go test -cover -v ./...
 
+integration:
+	go test -v integration/integration_test.go
+
 build:
 	rm -rf build && mkdir build
 	mkdir -p build/Linux  && GOOS=linux  go build -ldflags "-X main.Version=$(VERSION)" -o build/Linux/$(NAME) ./cmd/unicreds
@@ -47,4 +50,4 @@ generate-mocks:
 	mockery -dir ../../aws/aws-sdk-go/service/kms/kmsiface --all
 	mockery -dir ../../aws/aws-sdk-go/service/dynamodb/dynamodbiface -testonly -all
 
-.PHONY: build fmt test watch release packages
+.PHONY: build fmt test integration watch release packages

@@ -68,7 +68,7 @@ func TestSetup(t *testing.T) {
 	assert.Nil(t, err)
 }
 
-func TestGetSecretNotFound(t *testing.T) {
+func TestGetHighestVersionSecretNotFound(t *testing.T) {
 
 	dsMock, _ := configureMock()
 
@@ -78,13 +78,13 @@ func TestGetSecretNotFound(t *testing.T) {
 
 	dsMock.On("Query", mock.AnythingOfType("*dynamodb.QueryInput")).Return(qi, nil)
 
-	ds, err := GetSecret(&tableName, "test", NewEncryptionContextValue())
+	ds, err := GetHighestVersionSecret(&tableName, "test", NewEncryptionContextValue())
 
 	assert.Error(t, err, "Secret Not Found")
 	assert.Nil(t, ds)
 }
 
-func TestGetSecret(t *testing.T) {
+func TestGetHighestVersionSecret(t *testing.T) {
 
 	dsMock, kmsMock := configureMock()
 
@@ -97,7 +97,42 @@ func TestGetSecret(t *testing.T) {
 	dsMock.On("Query", mock.AnythingOfType("*dynamodb.QueryInput")).Return(qi, nil)
 	kmsMock.On("Decrypt", mock.AnythingOfType("*kms.DecryptInput")).Return(ki, nil)
 
-	ds, err := GetSecret(&tableName, "test", NewEncryptionContextValue())
+	ds, err := GetHighestVersionSecret(&tableName, "test", NewEncryptionContextValue())
+
+	assert.Nil(t, err)
+	assert.Equal(t, ds.Secret, "something test 123")
+}
+
+func TestGetSecretNotFound(t *testing.T) {
+
+	dsMock, _ := configureMock()
+
+	gi := &dynamodb.GetItemOutput{
+		Item: map[string]*dynamodb.AttributeValue{},
+	}
+
+	dsMock.On("GetItem", mock.AnythingOfType("*dynamodb.GetItemInput")).Return(gi, nil)
+
+	ds, err := GetSecret(&tableName, "test", "1", NewEncryptionContextValue())
+
+	assert.Error(t, err, "Secret Not Found")
+	assert.Nil(t, ds)
+}
+
+func TestGetSecret(t *testing.T) {
+
+	dsMock, kmsMock := configureMock()
+
+	gi := &dynamodb.GetItemOutput{
+		Item: itemsFixture[0],
+	}
+
+	ki := &kms.DecryptOutput{Plaintext: dsPlainText}
+
+	dsMock.On("GetItem", mock.AnythingOfType("*dynamodb.GetItemInput")).Return(gi, nil)
+	kmsMock.On("Decrypt", mock.AnythingOfType("*kms.DecryptInput")).Return(ki, nil)
+
+	ds, err := GetSecret(&tableName, "test", "1", NewEncryptionContextValue())
 
 	assert.Nil(t, err)
 	assert.Equal(t, ds.Secret, "something test 123")
