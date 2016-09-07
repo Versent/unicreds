@@ -1,6 +1,8 @@
 package unicreds
 
 import (
+	"fmt"
+
 	"github.com/apex/log"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -12,16 +14,23 @@ const (
 
 // SetAwsConfig configure the AWS region with a fallback for discovery
 // on EC2 hosts.
-func SetAwsConfig(region, profile *string) error {
+func SetAwsConfig(region, profile *string) (err error) {
 	if region == nil {
 		// Try to get our region based on instance metadata
-		region, err := getRegion()
+		region, err = getRegion()
 		if err != nil {
 			return err
 		}
-		// Update the aws config overrides if present
-		setAwsConfig(region, profile)
+	}
+
+	if aws.StringValue(region) == "" && aws.StringValue(profile) == "" {
 		return nil
+	}
+
+	// This is to work around a limitation of the credentials
+	// chain when providing an AWS profile as a flag
+	if aws.StringValue(region) == "" && aws.StringValue(profile) != "" {
+		return fmt.Errorf("Must provide a region flag when specifying a profile")
 	}
 
 	setAwsConfig(region, profile)

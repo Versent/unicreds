@@ -613,7 +613,8 @@ func getRegion() (*string, error) {
 
 	response, err := client.Get(zoneURL)
 	if err != nil {
-		return nil, err
+		log.WithField("err", err).Debug("Request instance region")
+		return nil, nil
 	}
 
 	defer response.Body.Close()
