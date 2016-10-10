@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 
 	"github.com/apex/log"
 	"github.com/apex/log/handlers/cli"
@@ -54,6 +56,9 @@ var (
 
 	cmdDelete     = app.Command("delete", "Delete a credential from the store.")
 	cmdDeleteName = cmdDelete.Arg("credential", "The name of the credential to delete.").Required().String()
+
+	cmdExecute        = app.Command("execute", "Execute the command given as argument")
+	cmdExecuteCommand = cmdExecute.Arg("command", "The command to execute.").Required().String()
 
 	// Version app version
 	Version = "1.0.0"
@@ -179,6 +184,23 @@ func main() {
 		if err != nil {
 			printFatalError(err)
 		}
+	case cmdExecute.FullCommand():
+		creds, err := unicreds.GetAllSecrets(dynamoTable, *cmdGetAllVersions)
+		if err != nil {
+			printFatalError(err)
+		}
+		for _, cred := range creds {
+			os.Setenv(cred.Name, cred.Secret)
+		}
+		cmd := exec.Command("/bin/sh", "-c", *cmdExecuteCommand)
+		cmd.Env = os.Environ()
+		var out bytes.Buffer
+		cmd.Stdout = &out
+		err = cmd.Run()
+		if err != nil {
+			printFatalError(err)
+		}
+		fmt.Printf("%s\n", out.String())
 	}
 }
 
