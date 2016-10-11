@@ -1,11 +1,11 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"syscall"
 
 	"github.com/apex/log"
 	"github.com/apex/log/handlers/cli"
@@ -57,8 +57,8 @@ var (
 	cmdDelete     = app.Command("delete", "Delete a credential from the store.")
 	cmdDeleteName = cmdDelete.Arg("credential", "The name of the credential to delete.").Required().String()
 
-	cmdExecute        = app.Command("execute", "Execute the command given as argument")
-	cmdExecuteCommand = cmdExecute.Arg("command", "The command to execute.").Required().String()
+	cmdExecute        = app.Command("exec", "Execute a command")
+	cmdExecuteCommand = cmdExecute.Arg("command", "The command to execute.").Required().Strings()
 
 	// Version app version
 	Version = "1.0.0"
@@ -185,22 +185,19 @@ func main() {
 			printFatalError(err)
 		}
 	case cmdExecute.FullCommand():
-		creds, err := unicreds.GetAllSecrets(dynamoTable, *cmdGetAllVersions)
+		args := []string(*cmdExecuteCommand)
+		commandPath, err := exec.LookPath(args[0])
 		if err != nil {
 			printFatalError(err)
 		}
+		creds, err := unicreds.GetAllSecrets(dynamoTable, *cmdGetAllVersions)
 		for _, cred := range creds {
 			os.Setenv(cred.Name, cred.Secret)
 		}
-		cmd := exec.Command("/bin/sh", "-c", *cmdExecuteCommand)
-		cmd.Env = os.Environ()
-		var out bytes.Buffer
-		cmd.Stdout = &out
-		err = cmd.Run()
+		err = syscall.Exec(commandPath, args, os.Environ())
 		if err != nil {
 			printFatalError(err)
 		}
-		fmt.Printf("%s\n", out.String())
 	}
 }
 
