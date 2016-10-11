@@ -2,8 +2,8 @@
 
 # unicreds
 
-Unicreds is a command line tool to manage secrets within an AWS account, the aim is to keep securely stored 
-with your systems and data so you don't have to manage them externally. It uses [DynamoDB](https://aws.amazon.com/dynamodb/) and [KMS](https://aws.amazon.com/kms/) to store and 
+Unicreds is a command line tool to manage secrets within an AWS account, the aim is to keep securely stored
+with your systems and data so you don't have to manage them externally. It uses [DynamoDB](https://aws.amazon.com/dynamodb/) and [KMS](https://aws.amazon.com/kms/) to store and
 encrypt these secrets. Access to these keys is controlled using [IAM](https://aws.amazon.com/iam/).
 
 Unicreds is written in [Go](https://golang.org/) and is based on [credstash](https://github.com/fugue/credstash).
@@ -72,6 +72,8 @@ Commands:
   delete <credential>
     Delete a credential from the store.
 
+  exec <command>...
+    Execute a command
 ```
 
 # examples
@@ -97,6 +99,11 @@ testingsup
 $ unicreds -r us-west-2 -p [yourawsprofile] get test123 -E 'stack:12'
    ⨯ failed                    error=InvalidCiphertextException:
 	status code: 400, request id: 0fed8a0b-5ea1-11e6-b359-fd8168c3c784
+```
+
+* Execute `env` command, all secrets are loaded as environment variables.
+```
+$ unicreds -r us-west-2 -p [yourawsprofile] exec -- env
 ```
 
 # references
