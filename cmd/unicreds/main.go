@@ -57,7 +57,7 @@ var (
 	cmdDelete     = app.Command("delete", "Delete a credential from the store.")
 	cmdDeleteName = cmdDelete.Arg("credential", "The name of the credential to delete.").Required().String()
 
-	cmdExecute        = app.Command("exec", "Execute a command")
+	cmdExecute        = app.Command("exec", "Execute a command with all secrets loaded as environment variables.")
 	cmdExecuteCommand = cmdExecute.Arg("command", "The command to execute.").Required().Strings()
 
 	// Version app version

@@ -73,7 +73,7 @@ Commands:
     Delete a credential from the store.
 
   exec <command>...
-    Execute a command
+    Execute a command with all secrets loaded as environment variables.
 ```
 
 # examples
