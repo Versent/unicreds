@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
+	"syscall"
 
 	"github.com/apex/log"
 	"github.com/apex/log/handlers/cli"
@@ -54,6 +56,9 @@ var (
 
 	cmdDelete     = app.Command("delete", "Delete a credential from the store.")
 	cmdDeleteName = cmdDelete.Arg("credential", "The name of the credential to delete.").Required().String()
+
+	cmdExecute        = app.Command("exec", "Execute a command with all secrets loaded as environment variables.")
+	cmdExecuteCommand = cmdExecute.Arg("command", "The command to execute.").Required().Strings()
 
 	// Version app version
 	Version = "1.0.0"
@@ -176,6 +181,20 @@ func main() {
 		}
 	case cmdDelete.FullCommand():
 		err := unicreds.DeleteSecret(dynamoTable, *cmdDeleteName)
+		if err != nil {
+			printFatalError(err)
+		}
+	case cmdExecute.FullCommand():
+		args := []string(*cmdExecuteCommand)
+		commandPath, err := exec.LookPath(args[0])
+		if err != nil {
+			printFatalError(err)
+		}
+		creds, err := unicreds.GetAllSecrets(dynamoTable, *cmdGetAllVersions)
+		for _, cred := range creds {
+			os.Setenv(cred.Name, cred.Secret)
+		}
+		err = syscall.Exec(commandPath, args, os.Environ())
 		if err != nil {
 			printFatalError(err)
 		}
