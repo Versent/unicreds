@@ -138,6 +138,21 @@ There is an integration test you can run using `make integration`. You must set 
 
 If you've been using unicreds auto-versioning before September 2015, Unicreds had the [same](https://github.com/fugue/credstash/issues/51) [bug](https://github.com/Versent/unicreds/issues/34) as credstash when auto-versioning that results in a sorting error after ten versions. You should be able to run the [credstash-migrate-autoversion.py](https://github.com/fugue/credstash/blob/master/credstash-migrate-autoversion.py) script included in the root of the credstash repository to update your versions prior to using the latest version of unicreds.
 
+# Docker ENTRYPOINT
+
+It is possible to use `unicreds exec` as an [entrypoint](https://docs.docker.com/engine/reference/builder/#/entrypoint) for loading safely your secrets as environment variables inside your container in AWS ECS.
+
+### Example
+```
+RUN curl -sL \
+    https://github.com/Versent/unicreds/releases/download/v1.5.0/unicreds_1.5.0_linux_x86_64.tgz \
+ | tar zx -C /usr/local/bin \
+ && chmod +x /usr/local/bin/unicreds
+ENTRYPOINT ["/usr/local/bin/unicreds", "exec", "--"]
+```
+
+With [IAM roles for Amazon ECS tasks](http://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-iam-roles.html) you can give the necessary privileges to your container so that it can exploit `unicreds`.
+
 # todo
 
 * Add the ability to filter list / getall results using DynamoDB filters, at the moment I just use `| grep blah`.
