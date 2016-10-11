@@ -736,3 +736,31 @@ func (_m *DynamoDBAPI) UpdateTable(_a0 *dynamodb.UpdateTableInput) (*dynamodb.Up
 
 	return r0, r1
 }
+
+// WaitUntilTableExists provides a mock function with given fields: _a0
+func (_m *DynamoDBAPI) WaitUntilTableExists(_a0 *dynamodb.DescribeTableInput) error {
+	ret := _m.Called(_a0)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(*dynamodb.DescribeTableInput) error); ok {
+		r0 = rf(_a0)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// WaitUntilTableNotExists provides a mock function with given fields: _a0
+func (_m *DynamoDBAPI) WaitUntilTableNotExists(_a0 *dynamodb.DescribeTableInput) error {
+	ret := _m.Called(_a0)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(*dynamodb.DescribeTableInput) error); ok {
+		r0 = rf(_a0)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
