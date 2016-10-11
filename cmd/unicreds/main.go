@@ -134,7 +134,7 @@ func main() {
 		if err != nil {
 			printFatalError(err)
 		}
-		log.WithFields(log.Fields{"name": *cmdPutName, "version": version}).Info("stored")
+		log.WithFields(log.Fields{"name": *cmdPutFileName, "version": version}).Info("stored")
 	case cmdList.FullCommand():
 		creds, err := unicreds.ListSecrets(dynamoTable, *cmdListAllVersions)
 		if err != nil {
