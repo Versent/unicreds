@@ -2,16 +2,18 @@ package unicreds
 
 import (
 	"encoding/csv"
+	"encoding/json"
 	"io"
-
 	"github.com/olekukonko/tablewriter"
+	"strings"
 )
 
 const (
 	// TableFormatTerm format the table for a terminal session
 	TableFormatTerm = iota // 0
 	// TableFormatCSV format the table as CSV
-	TableFormatCSV // 1
+	TableFormatCSV  = 1 // 1
+	TableFormatJSON = 2 // 2
 )
 
 // TableWriter enables writing of tables in a variety of formats
@@ -46,6 +48,7 @@ func (tw *TableWriter) BulkWrite(rows [][]string) {
 	tw.rows = append(tw.rows, rows...)
 }
 
+
 // Render render the table out to the supplied writer
 func (tw *TableWriter) Render() error {
 	switch tw.tableFormat {
@@ -67,6 +70,20 @@ func (tw *TableWriter) Render() error {
 		if err := w.Error(); err != nil {
 			return err
 		}
+
+	case TableFormatJSON:
+
+		encoder := json.NewEncoder(tw.wr)
+		value := make([] map[string]string, len(tw.rows))
+
+		for i := 0; i < len(tw.rows); i++ {
+			value[i] = make(map[string]string)
+			for j := 0; j < len(tw.headers); j++ {
+				value[i][tw.headers[j]] = tw.rows[i][j]
+			}
+		}
+		encoder.SetIndent("  ", "  ")
+		encoder.Encode(value)
 	}
 
 	return nil
