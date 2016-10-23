@@ -263,19 +263,31 @@ func GetHighestVersion(tableName *string, name string) (string, error) {
 func ListSecrets(tableName *string, allVersions bool) ([]*Credential, error) {
 	log.Debug("Listing secrets")
 
-	res, err := dynamoSvc.Scan(&dynamodb.ScanInput{
-		TableName: tableName,
-		ExpressionAttributeNames: map[string]*string{
-			"#N": aws.String("name"),
-		},
-		ProjectionExpression: aws.String("#N, version, created_at"),
-		ConsistentRead:       aws.Bool(true),
-	})
-	if err != nil {
-		return nil, err
+	var items []map[string]*dynamodb.AttributeValue
+	var lastEvaluatedKey map[string]*dynamodb.AttributeValue
+
+	for {
+		res, err := dynamoSvc.Scan(&dynamodb.ScanInput{
+			TableName: tableName,
+			ExpressionAttributeNames: map[string]*string{
+				"#N": aws.String("name"),
+			},
+			ProjectionExpression: aws.String("#N, version, created_at"),
+			ConsistentRead:       aws.Bool(true),
+			ExclusiveStartKey:    lastEvaluatedKey,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		items = append(items, res.Items...)
+		lastEvaluatedKey = res.LastEvaluatedKey
+		if lastEvaluatedKey == nil {
+			break
+		}
 	}
 
-	creds, err := decodeCredential(res.Items)
+	creds, err := decodeCredential(items)
 	if err != nil {
 		return nil, err
 	}
@@ -299,23 +311,35 @@ func GetAllSecrets(tableName *string, allVersions bool) ([]*DecryptedCredential,
 	// build an empty encryption context
 	encContext := NewEncryptionContextValue()
 
-	res, err := dynamoSvc.Scan(&dynamodb.ScanInput{
-		TableName: tableName,
-		AttributesToGet: []*string{
-			aws.String("name"),
-			aws.String("version"),
-			aws.String("key"),
-			aws.String("contents"),
-			aws.String("hmac"),
-			aws.String("created_at"),
-		},
-		ConsistentRead: aws.Bool(true),
-	})
-	if err != nil {
-		return nil, err
+	var items []map[string]*dynamodb.AttributeValue
+	var lastEvaluatedKey map[string]*dynamodb.AttributeValue
+
+	for {
+		res, err := dynamoSvc.Scan(&dynamodb.ScanInput{
+			TableName: tableName,
+			AttributesToGet: []*string{
+				aws.String("name"),
+				aws.String("version"),
+				aws.String("key"),
+				aws.String("contents"),
+				aws.String("hmac"),
+				aws.String("created_at"),
+			},
+			ConsistentRead:    aws.Bool(true),
+			ExclusiveStartKey: lastEvaluatedKey,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		items = append(items, res.Items...)
+		lastEvaluatedKey = res.LastEvaluatedKey
+		if lastEvaluatedKey == nil {
+			break
+		}
 	}
 
-	creds, err := decodeCredential(res.Items)
+	creds, err := decodeCredential(items)
 	if err != nil {
 		return nil, err
 	}
