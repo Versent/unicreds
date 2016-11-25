@@ -160,7 +160,7 @@ func main() {
 			printFatalError(err)
 		}
 	case cmdGetAll.FullCommand():
-		creds, err := unicreds.GetAllSecrets(dynamoTable, *cmdGetAllVersions)
+		creds, err := unicreds.GetAllSecrets(dynamoTable, *cmdGetAllVersions, encContext)
 		if err != nil {
 			printFatalError(err)
 		}
@@ -190,7 +190,7 @@ func main() {
 		if err != nil {
 			printFatalError(err)
 		}
-		creds, err := unicreds.GetAllSecrets(dynamoTable, *cmdGetAllVersions)
+		creds, err := unicreds.GetAllSecrets(dynamoTable, *cmdGetAllVersions, encContext)
 		for _, cred := range creds {
 			os.Setenv(cred.Name, cred.Secret)
 		}

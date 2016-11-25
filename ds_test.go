@@ -152,7 +152,7 @@ func TestGetAllSecrets(t *testing.T) {
 	dsMock.On("Scan", mock.AnythingOfType("*dynamodb.ScanInput")).Return(qs, nil)
 	kmsMock.On("Decrypt", mock.AnythingOfType("*kms.DecryptInput")).Return(ki, nil)
 
-	ds, err := GetAllSecrets(&tableName, false)
+	ds, err := GetAllSecrets(&tableName, false, NewEncryptionContextValue())
 
 	assert.Nil(t, err)
 	assert.Len(t, ds, 1)
@@ -172,7 +172,30 @@ func TestGetAllSecretsDecryptFailed(t *testing.T) {
 	dsMock.On("Scan", mock.AnythingOfType("*dynamodb.ScanInput")).Return(qs, nil)
 	kmsMock.On("Decrypt", mock.AnythingOfType("*kms.DecryptInput")).Return(nil, awsErr)
 
-	ds, err := GetAllSecrets(&tableName, true)
+	ds, err := GetAllSecrets(&tableName, true, NewEncryptionContextValue())
+
+	assert.Nil(t, err)
+	assert.Len(t, ds, 0)
+}
+
+func TestGetAllSecretsEncryptionContextFailed(t *testing.T) {
+
+	dsMock, kmsMock := configureMock()
+
+	qs := &dynamodb.ScanOutput{
+		Count: aws.Int64(0),
+		Items: itemsFixture,
+	}
+
+	awsErr := awserr.New("InvalidCiphertextException", "", nil)
+
+	dsMock.On("Scan", mock.AnythingOfType("*dynamodb.ScanInput")).Return(qs, nil)
+	kmsMock.On("Decrypt", mock.AnythingOfType("*kms.DecryptInput")).Return(nil, awsErr)
+
+	ec := NewEncryptionContextValue()
+	ec.Set("Unknown:Context")
+
+	ds, err := GetAllSecrets(&tableName, true, ec)
 
 	assert.Nil(t, err)
 	assert.Len(t, ds, 0)
