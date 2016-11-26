@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"strings"
 	"syscall"
 
 	"github.com/apex/log"
@@ -57,8 +58,17 @@ var (
 	cmdDelete     = app.Command("delete", "Delete a credential from the store.")
 	cmdDeleteName = cmdDelete.Arg("credential", "The name of the credential to delete.").Required().String()
 
-	cmdExecute        = app.Command("exec", "Execute a command with all secrets loaded as environment variables.")
-	cmdExecuteCommand = cmdExecute.Arg("command", "The command to execute.").Required().Strings()
+	cmdExecute            = app.Command("exec", "Execute a command with all secrets loaded as environment variables.")
+	cmdExecuteCommand     = cmdExecute.Arg("command", "The command to execute.").Required().Strings()
+	cmdExecuteStripPrefix = cmdExecute.
+				Flag("strip-prefix", "Declare a string to strip from the start of the credential.").
+				Short('P').Strings()
+	cmdExecuteStripSuffix = cmdExecute.
+				Flag("strip-suffix", "Declare a string to strip from the end of the credential.").
+				Short('S').Strings()
+	cmdExecuteStripDelim = cmdExecute.
+				Flag("strip-delimiter", "Delimiter before or after the suffix or prefix to strip").
+				Default(".").Short('D').String()
 
 	// Version app version
 	Version = "1.0.0"
@@ -192,11 +202,39 @@ func main() {
 		}
 		creds, err := unicreds.GetAllSecrets(dynamoTable, *cmdGetAllVersions)
 		for _, cred := range creds {
+			stripFix(cred, *cmdExecuteStripPrefix, *cmdExecuteStripSuffix, *cmdExecuteStripDelim)
 			os.Setenv(cred.Name, cred.Secret)
 		}
 		err = syscall.Exec(commandPath, args, os.Environ())
 		if err != nil {
 			printFatalError(err)
+		}
+	}
+}
+
+func stripFix(cred *unicreds.DecryptedCredential, prefixes []string, suffixes []string, delimiter string) {
+	for _, p := range prefixes {
+		prefix := p + delimiter
+		// don't allow empty name
+		if cred.Name == prefix {
+			continue
+		}
+		if strings.HasPrefix(cred.Name, prefix) {
+			cred.Name = strings.TrimPrefix(cred.Name, prefix)
+			// don't allow unlimited stripping
+			break
+		}
+	}
+	for _, s := range suffixes {
+		suffix := delimiter + s
+		// don't allow empty name
+		if cred.Name == suffix {
+			continue
+		}
+		if strings.HasSuffix(cred.Name, suffix) {
+			cred.Name = strings.TrimSuffix(cred.Name, suffix)
+			// don't allow unlimited stripping
+			break
 		}
 	}
 }
