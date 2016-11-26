@@ -442,7 +442,7 @@ func DeleteSecret(tableName *string, name string) error {
 			"#N": aws.String("name"),
 		},
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
-			":name": &dynamodb.AttributeValue{
+			":name": {
 				S: aws.String(name),
 			},
 		},
@@ -522,12 +522,11 @@ func decryptCredential(cred *Credential, encContext *EncryptionContextValue) (*D
 	dk, err := DecryptDataKey(wrappedKey, encContext)
 	if awsErr, ok := err.(awserr.Error); ok {
 		// Create reasoned responses to assist with debugging
-		if awsErr.Code() == "AccessDeniedException" {
-			log.Debugf("KMS Access Denied to decrypt: %s", cred.Name)
-			err = awserr.New("AccessDeniedException", "KMS Access Denied to decrypt", nil)
-		}
-		if awsErr.Code() == "InvalidCiphertextException" {
-			err = awserr.New("InvalidCiphertextException", "The encryption context provided "+
+		switch awsErr.Code() {
+		case "AccessDeniedException":
+			err = awserr.New(awsErr.Code(), "KMS Access Denied to decrypt", nil)
+		case "InvalidCiphertextException":
+			err = awserr.New(awsErr.Code(), "The encryption context provided "+
 				"may not match the one used when the credential was stored", nil)
 		}
 	}
