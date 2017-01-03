@@ -5,7 +5,7 @@
     <title>unicreds</title>
     <version>1.5.1</version>
     <authors>wolfeidau</authors>
-    <owners>wolfeidau</owners>
+    <owners>jwong</owners>
     <summary>unicreds is a CLI which manages secrets in AWS using DynamoDB and KMS. https://github.com/Versent/unicreds</summary>
     <description>
         Unicreds is a command line tool to manage secrets within an AWS account, the aim is to keep securely stored with your systems and data so you don't have to manage them externally. It uses DynamoDB and KMS to store and encrypt these secrets. Access to these keys is controlled using IAM.
