@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+  <metadata>
+    <id>unicreds</id>
+    <title>unicreds</title>
+    <version>1.5.1</version>
+    <authors>wolfeidau</authors>
+    <owners>jwong</owners>
+    <summary>unicreds is a CLI which manages secrets in AWS using DynamoDB and KMS. https://github.com/Versent/unicreds</summary>
+    <description>
+        Unicreds is a command line tool to manage secrets within an AWS account, the aim is to keep securely stored with your systems and data so you don't have to manage them externally. It uses DynamoDB and KMS to store and encrypt these secrets. Access to these keys is controlled using IAM.
+
+        Unicreds is written in Go and is based on credstash.
+
+        See project README for more details: https://github.com/Versent/unicreds/blob/master/README.md
+    </description>
+    <projectUrl>https://github.com/Versent/unicreds</projectUrl>
+    <packageSourceUrl>https://github.com/Versent/unicreds</packageSourceUrl>
+    <projectSourceUrl>https://github.com/Versent/unicreds</projectSourceUrl>
+    <docsUrl>https://github.com/Versent/unicreds</docsUrl>
+    <!--<mailingListUrl></mailingListUrl>-->
+    <bugTrackerUrl>https://github.com/Versent/unicreds/issues</bugTrackerUrl>
+    <tags>unicreds kms aws secrets encryption password</tags>
+    <copyright></copyright>
+    <licenseUrl>https://github.com/Versent/unicreds/blob/master/LICENSE.md</licenseUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <!--<iconUrl>http://cdn.rawgit.com/__REPLACE_YOUR_REPO__/master/icons/unicreds.png</iconUrl>-->
+    <!--<dependencies>
+      <dependency id="" version="__VERSION__" />
+      <dependency id="" />
+    </dependencies>-->
+    <releaseNotes>Release notes: https://github.com/Versent/unicreds/releases/tag/1.5.1</releaseNotes>
+    <!--<provides></provides>-->
+  </metadata>
+  <files>
+    <file src="tools\**" target="tools" />
+  </files>
+</package>
