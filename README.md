@@ -25,6 +25,12 @@ unicreds setup --region ap-southeast-2 --profile [yourawsprofile]
 ```
 **Note:** It is really important to tune DynamoDB to your read and write requirements if your using unicreds with automation!
 
+# demo
+
+To illustrate how unicreds works I made a screen recording of list, put, get and delete.
+
+![Image of screencast](docs/images/unicreds_recording.gif) 
+
 # usage
 
 ```
