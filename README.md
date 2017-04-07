@@ -23,7 +23,7 @@ aws --region ap-southeast-2 --profile [yourawsprofile] kms create-alias --alias-
 ```
 unicreds setup --region ap-southeast-2 --profile [yourawsprofile]
 ```
-**Note:** It is really important to tune DynamoDB to your read and write requirements if your using unicreds with automation!
+**Note:** It is really important to tune DynamoDB to your read and write requirements if you're using unicreds with automation!
 
 # demo
 
@@ -118,7 +118,7 @@ $ unicreds -r us-west-2 -p [yourawsprofile] exec -- env
 
 # install
 
-If your on OSX you can install unicreds using homebrew now!
+If you're on OSX you can install unicreds using homebrew now!
 
 ```
 brew tap versent/homebrew-taps
