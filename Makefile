@@ -60,6 +60,6 @@ packages:
 
 generate-mocks:
 	mockery -dir ../../aws/aws-sdk-go/service/kms/kmsiface --all
-	mockery -dir ../../aws/aws-sdk-go/service/dynamodb/dynamodbiface -testonly -all
+	mockery -dir ../../aws/aws-sdk-go/service/dynamodb/dynamodbiface --all
 
 .PHONY: build fmt test integration watch release packages
