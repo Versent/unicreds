@@ -7,5 +7,13 @@ import (
 
 // Decode decode the supplied struct from the dynamodb result map
 func Decode(data map[string]*dynamodb.AttributeValue, rawVal interface{}) error {
+	// Fix for issue https://github.com/fugue/credstash/issues/154 in credstash
+	// This is needed until this issue is resolved, and also until we push new
+	// values into credstash that have a string hmac value and not a binary hmac
+	// value
+	if len(data["hmac"].B) > 0 {
+		hmac := string(data["hmac"].B)
+		data["hmac"] = &dynamodb.AttributeValue{S: &hmac}
+	}
 	return dynamodbattribute.UnmarshalMap(data, rawVal)
 }
