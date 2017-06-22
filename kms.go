@@ -25,13 +25,13 @@ type DataKey struct {
 }
 
 // GenerateDataKey simplified method for generating a datakey with kms
-func GenerateDataKey(alias string, size int) (*DataKey, error) {
+func GenerateDataKey(alias string, encContext *EncryptionContextValue, size int) (*DataKey, error) {
 
 	numberOfBytes := int64(size)
 
 	params := &kms.GenerateDataKeyInput{
 		KeyId:             aws.String(alias),
-		EncryptionContext: map[string]*string{},
+		EncryptionContext: *encContext,
 		GrantTokens:       []*string{},
 		NumberOfBytes:     aws.Int64(numberOfBytes),
 	}
@@ -49,11 +49,11 @@ func GenerateDataKey(alias string, size int) (*DataKey, error) {
 }
 
 // DecryptDataKey ask kms to decrypt the supplied data key
-func DecryptDataKey(ciphertext []byte) (*DataKey, error) {
+func DecryptDataKey(ciphertext []byte, encContext *EncryptionContextValue) (*DataKey, error) {
 
 	params := &kms.DecryptInput{
 		CiphertextBlob:    ciphertext,
-		EncryptionContext: map[string]*string{},
+		EncryptionContext: *encContext,
 		GrantTokens:       []*string{},
 	}
 	resp, err := kmsSvc.Decrypt(params)

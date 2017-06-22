@@ -12,8 +12,8 @@ import (
 func TestDecode(t *testing.T) {
 
 	cred := struct {
-		Name      string `ds:"name"`
-		Timestamp int64  `ds:"timestamp"`
+		Name      string `dynamodbav:"name"`
+		Timestamp int64  `dynamodbav:"timestamp"`
 	}{}
 
 	data := map[string]*dynamodb.AttributeValue{

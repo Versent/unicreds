@@ -11,8 +11,8 @@ import (
 func TestEncode(t *testing.T) {
 
 	cred := struct {
-		Name      string `ds:"name"`
-		Timestamp int64  `ds:"timestamp"`
+		Name      string `dynamodbav:"name"`
+		Timestamp int64  `dynamodbav:"timestamp"`
 	}{
 		Name:      "data",
 		Timestamp: 1449038525717338459,

@@ -15,8 +15,10 @@ import (
 )
 
 var (
-	tableName   = "credential-store"
-	dsPlainText = []byte{
+	tableName     = "credential-store"
+	readCapacity  = int64(4)
+	writeCapacity = int64(4)
+	dsPlainText   = []byte{
 		0x6a, 0xcf, 0xeb, 0xd6, 0xe9, 0xa6, 0x19, 0xc1,
 		0x38, 0xb9, 0xfc, 0x2d, 0x53, 0x23, 0x4d, 0x78,
 		0x85, 0x48, 0x96, 0xd6, 0xd2, 0xf6, 0xf4, 0x42,
@@ -61,12 +63,12 @@ func TestSetup(t *testing.T) {
 	dsMock.On("DescribeTable",
 		mock.AnythingOfType("*dynamodb.DescribeTableInput")).Return(dto, nil)
 
-	err := Setup(&tableName)
+	err := Setup(&tableName, &readCapacity, &writeCapacity)
 
 	assert.Nil(t, err)
 }
 
-func TestGetSecretNotFound(t *testing.T) {
+func TestGetHighestVersionSecretNotFound(t *testing.T) {
 
 	dsMock, _ := configureMock()
 
@@ -76,13 +78,13 @@ func TestGetSecretNotFound(t *testing.T) {
 
 	dsMock.On("Query", mock.AnythingOfType("*dynamodb.QueryInput")).Return(qi, nil)
 
-	ds, err := GetSecret(&tableName, "test")
+	ds, err := GetHighestVersionSecret(&tableName, "test", NewEncryptionContextValue())
 
 	assert.Error(t, err, "Secret Not Found")
 	assert.Nil(t, ds)
 }
 
-func TestGetSecret(t *testing.T) {
+func TestGetHighestVersionSecret(t *testing.T) {
 
 	dsMock, kmsMock := configureMock()
 
@@ -95,7 +97,42 @@ func TestGetSecret(t *testing.T) {
 	dsMock.On("Query", mock.AnythingOfType("*dynamodb.QueryInput")).Return(qi, nil)
 	kmsMock.On("Decrypt", mock.AnythingOfType("*kms.DecryptInput")).Return(ki, nil)
 
-	ds, err := GetSecret(&tableName, "test")
+	ds, err := GetHighestVersionSecret(&tableName, "test", NewEncryptionContextValue())
+
+	assert.Nil(t, err)
+	assert.Equal(t, ds.Secret, "something test 123")
+}
+
+func TestGetSecretNotFound(t *testing.T) {
+
+	dsMock, _ := configureMock()
+
+	gi := &dynamodb.GetItemOutput{
+		Item: map[string]*dynamodb.AttributeValue{},
+	}
+
+	dsMock.On("GetItem", mock.AnythingOfType("*dynamodb.GetItemInput")).Return(gi, nil)
+
+	ds, err := GetSecret(&tableName, "test", "1", NewEncryptionContextValue())
+
+	assert.Error(t, err, "Secret Not Found")
+	assert.Nil(t, ds)
+}
+
+func TestGetSecret(t *testing.T) {
+
+	dsMock, kmsMock := configureMock()
+
+	gi := &dynamodb.GetItemOutput{
+		Item: itemsFixture[0],
+	}
+
+	ki := &kms.DecryptOutput{Plaintext: dsPlainText}
+
+	dsMock.On("GetItem", mock.AnythingOfType("*dynamodb.GetItemInput")).Return(gi, nil)
+	kmsMock.On("Decrypt", mock.AnythingOfType("*kms.DecryptInput")).Return(ki, nil)
+
+	ds, err := GetSecret(&tableName, "test", "1", NewEncryptionContextValue())
 
 	assert.Nil(t, err)
 	assert.Equal(t, ds.Secret, "something test 123")
