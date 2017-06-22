@@ -263,19 +263,31 @@ func GetHighestVersion(tableName *string, name string) (string, error) {
 func ListSecrets(tableName *string, allVersions bool) ([]*Credential, error) {
 	log.Debug("Listing secrets")
 
-	res, err := dynamoSvc.Scan(&dynamodb.ScanInput{
-		TableName: tableName,
-		ExpressionAttributeNames: map[string]*string{
-			"#N": aws.String("name"),
-		},
-		ProjectionExpression: aws.String("#N, version, created_at"),
-		ConsistentRead:       aws.Bool(true),
-	})
-	if err != nil {
-		return nil, err
+	var items []map[string]*dynamodb.AttributeValue
+	var lastEvaluatedKey map[string]*dynamodb.AttributeValue
+
+	for {
+		res, err := dynamoSvc.Scan(&dynamodb.ScanInput{
+			TableName: tableName,
+			ExpressionAttributeNames: map[string]*string{
+				"#N": aws.String("name"),
+			},
+			ProjectionExpression: aws.String("#N, version, created_at"),
+			ConsistentRead:       aws.Bool(true),
+			ExclusiveStartKey:    lastEvaluatedKey,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		items = append(items, res.Items...)
+		lastEvaluatedKey = res.LastEvaluatedKey
+		if lastEvaluatedKey == nil {
+			break
+		}
 	}
 
-	creds, err := decodeCredential(res.Items)
+	creds, err := decodeCredential(items)
 	if err != nil {
 		return nil, err
 	}
@@ -293,29 +305,38 @@ func ListSecrets(tableName *string, allVersions bool) ([]*Credential, error) {
 }
 
 // GetAllSecrets returns a list of all secrets
-func GetAllSecrets(tableName *string, allVersions bool) ([]*DecryptedCredential, error) {
+func GetAllSecrets(tableName *string, allVersions bool, encContext *EncryptionContextValue) ([]*DecryptedCredential, error) {
 	log.Debug("Getting all secrets")
 
-	// build an empty encryption context
-	encContext := NewEncryptionContextValue()
+	var items []map[string]*dynamodb.AttributeValue
+	var lastEvaluatedKey map[string]*dynamodb.AttributeValue
 
-	res, err := dynamoSvc.Scan(&dynamodb.ScanInput{
-		TableName: tableName,
-		AttributesToGet: []*string{
-			aws.String("name"),
-			aws.String("version"),
-			aws.String("key"),
-			aws.String("contents"),
-			aws.String("hmac"),
-			aws.String("created_at"),
-		},
-		ConsistentRead: aws.Bool(true),
-	})
-	if err != nil {
-		return nil, err
+	for {
+		res, err := dynamoSvc.Scan(&dynamodb.ScanInput{
+			TableName: tableName,
+			AttributesToGet: []*string{
+				aws.String("name"),
+				aws.String("version"),
+				aws.String("key"),
+				aws.String("contents"),
+				aws.String("hmac"),
+				aws.String("created_at"),
+			},
+			ConsistentRead:    aws.Bool(true),
+			ExclusiveStartKey: lastEvaluatedKey,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		items = append(items, res.Items...)
+		lastEvaluatedKey = res.LastEvaluatedKey
+		if lastEvaluatedKey == nil {
+			break
+		}
 	}
 
-	creds, err := decodeCredential(res.Items)
+	creds, err := decodeCredential(items)
 	if err != nil {
 		return nil, err
 	}
@@ -336,8 +357,8 @@ func GetAllSecrets(tableName *string, allVersions bool) ([]*DecryptedCredential,
 		dcred, err := decryptCredential(cred, encContext)
 		if err != nil {
 			if awsErr, ok := err.(awserr.Error); ok {
-				if awsErr.Code() == "AccessDeniedException" {
-					log.Debugf("KMS Access Denied to decrypt: %s", cred.Name)
+				if awsErr.Code() == "AccessDeniedException" || awsErr.Code() == "InvalidCiphertextException" {
+					log.Debugf("%s: %s", err, cred.Name)
 					continue
 				}
 			}
@@ -421,7 +442,7 @@ func DeleteSecret(tableName *string, name string) error {
 			"#N": aws.String("name"),
 		},
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
-			":name": &dynamodb.AttributeValue{
+			":name": {
 				S: aws.String(name),
 			},
 		},
@@ -447,10 +468,10 @@ func DeleteSecret(tableName *string, name string) error {
 		_, err = dynamoSvc.DeleteItem(&dynamodb.DeleteItemInput{
 			TableName: tableName,
 			Key: map[string]*dynamodb.AttributeValue{
-				"name": &dynamodb.AttributeValue{
+				"name": {
 					S: aws.String(cred.Name),
 				},
-				"version": &dynamodb.AttributeValue{
+				"version": {
 					S: aws.String(cred.Version),
 				},
 			},
@@ -499,7 +520,16 @@ func decryptCredential(cred *Credential, encContext *EncryptionContextValue) (*D
 	}
 
 	dk, err := DecryptDataKey(wrappedKey, encContext)
-
+	if awsErr, ok := err.(awserr.Error); ok {
+		// Create reasoned responses to assist with debugging
+		switch awsErr.Code() {
+		case "AccessDeniedException":
+			err = awserr.New(awsErr.Code(), "KMS Access Denied to decrypt", nil)
+		case "InvalidCiphertextException":
+			err = awserr.New(awsErr.Code(), "The encryption context provided "+
+				"may not match the one used when the credential was stored", nil)
+		}
+	}
 	if err != nil {
 		return nil, err
 	}

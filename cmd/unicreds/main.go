@@ -23,9 +23,10 @@ var (
 
 	region  = app.Flag("region", "Configure the AWS region").Short('r').String()
 	profile = app.Flag("profile", "Configure the AWS profile").Short('p').String()
+	role    = app.Flag("role", "Specify an AWS role ARN to assume").Short('R').String()
 
-	dynamoTable = app.Flag("table", "DynamoDB table.").Default("credential-store").Short('t').String()
-	alias       = app.Flag("alias", "KMS key alias.").Default("alias/credstash").Short('k').String()
+	dynamoTable = app.Flag("table", "DynamoDB table.").Default("credential-store").OverrideDefaultFromEnvar("UNICREDS_TABLE").Short('t').String()
+	alias       = app.Flag("alias", "KMS key alias.").Default("alias/credstash").OverrideDefaultFromEnvar("UNICREDS_ALIAS").Short('k').String()
 	encContext  = encryptionContext(app.Flag("enc-context", "Add a key value pair to the encryption context.").Short('E'))
 
 	// commands
@@ -79,7 +80,7 @@ func main() {
 		log.SetLevel(log.DebugLevel)
 	}
 
-	unicreds.SetAwsConfig(region, profile)
+	unicreds.SetAwsConfig(region, profile, role)
 
 	switch command {
 	case cmdSetup.FullCommand():
@@ -160,7 +161,7 @@ func main() {
 			printFatalError(err)
 		}
 	case cmdGetAll.FullCommand():
-		creds, err := unicreds.GetAllSecrets(dynamoTable, *cmdGetAllVersions)
+		creds, err := unicreds.GetAllSecrets(dynamoTable, *cmdGetAllVersions, encContext)
 		if err != nil {
 			printFatalError(err)
 		}
@@ -190,7 +191,7 @@ func main() {
 		if err != nil {
 			printFatalError(err)
 		}
-		creds, err := unicreds.GetAllSecrets(dynamoTable, *cmdGetAllVersions)
+		creds, err := unicreds.GetAllSecrets(dynamoTable, *cmdGetAllVersions, encContext)
 		for _, cred := range creds {
 			os.Setenv(cred.Name, cred.Secret)
 		}

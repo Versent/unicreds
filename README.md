@@ -23,7 +23,13 @@ aws --region ap-southeast-2 --profile [yourawsprofile] kms create-alias --alias-
 ```
 unicreds setup --region ap-southeast-2 --profile [yourawsprofile]
 ```
-**Note:** It is really important to tune DynamoDB to your read and write requirements if your using unicreds with automation!
+**Note:** It is really important to tune DynamoDB to your read and write requirements if you're using unicreds with automation!
+
+# demo
+
+To illustrate how unicreds works I made a screen recording of list, put, get and delete.
+
+![Image of screencast](docs/images/unicreds_recording.gif)
 
 # usage
 
@@ -40,10 +46,11 @@ Flags:
   -j, --json                     Output results in JSON
   -r, --region=REGION            Configure the AWS region
   -p, --profile=PROFILE          Configure the AWS profile
-  -t, --table="credential-store"  
+  -R, --role=ROLE                Specify an AWS role ARN to assume
+  -t, --table="credential-store"
                                  DynamoDB table.
   -k, --alias="alias/credstash"  KMS key alias.
-  -E, --enc-context=ENC-CONTEXT ...  
+  -E, --enc-context=ENC-CONTEXT ...
                                  Add a key value pair to the encryption context.
       --version                  Show application version.
 
@@ -78,32 +85,43 @@ Commands:
 
 # examples
 
-* List secrets.
+* List secrets using default profile:
 ```
-$ unicreds -r us-west-2 -p [yourawsprofile] list
+$ unicreds -r us-west-2 list
 ```
+
+* List secrets using profile MYPROFILE in `~/.aws/credentials` (NOTE: `~/.aws/config` is only used by aws CLI, not the SDK)
+```
+$ unicreds -r us-west-2 -p MYPROFILE list
+```
+
+* List secrets using a profile, but also assuming a role:
+```
+$ unicreds -r us-west-2 -p MYPROFILE -R arn:aws:iam::123456789012:role/MYROLE list
+```
+
 * Store a login for `test123` from unicreds using the encryption context feature.
 ```
-$ unicreds -r us-west-2 -p [yourawsprofile] put test123 -E 'stack:123' testingsup
+$ unicreds -r us-west-2 put test123 -E 'stack:123' testingsup
    • stored                    name=test123 version=0000000000000000001
 ```
 
 * Retrieve a login for `test123` from unicreds using the encryption context feature.
 ```
-$ unicreds -r us-west-2 -p [yourawsprofile] get test123 -E 'stack:123'
+$ unicreds -r us-west-2 get test123 -E 'stack:123'
 testingsup
 ```
 
 * Example of a failed encryption context check.
 ```
-$ unicreds -r us-west-2 -p [yourawsprofile] get test123 -E 'stack:12'
+$ unicreds -r us-west-2 get test123 -E 'stack:12'
    ⨯ failed                    error=InvalidCiphertextException:
 	status code: 400, request id: 0fed8a0b-5ea1-11e6-b359-fd8168c3c784
 ```
 
 * Execute `env` command, all secrets are loaded as environment variables.
 ```
-$ unicreds -r us-west-2 -p [yourawsprofile] exec -- env
+$ unicreds -r us-west-2 exec -- env
 ```
 
 # references
@@ -112,7 +130,7 @@ $ unicreds -r us-west-2 -p [yourawsprofile] exec -- env
 
 # install
 
-If your on OSX you can install unicreds using homebrew now!
+If you're on OSX you can install unicreds using homebrew now!
 
 ```
 brew tap versent/homebrew-taps

@@ -33,7 +33,7 @@ release: dist
 	comparison="$$latest_tag..HEAD"; \
 	if [ -z "$$latest_tag" ]; then comparison=""; fi; \
 	changelog=$$(git log $$comparison --oneline --no-merges --reverse); \
-	github-release c4milo/$(NAME) $(VERSION) "$$(git rev-parse --abbrev-ref HEAD)" "**Changelog**<br/>$$changelog" 'dist/*'; \
+	github-release versent/$(NAME) $(VERSION) "$$(git rev-parse --abbrev-ref HEAD)" "**Changelog**<br/>$$changelog" 'dist/*'; \
 	git pull
 
 deps:
@@ -54,12 +54,12 @@ watch:
 packages:
 	rm -rf package && mkdir package
 	rm -rf stage && mkdir -p stage/usr/bin
-	cp build/Linux/unicreds stage/usr/bin
+	cp build/unicreds_1.5.1_linux_amd64/unicreds stage/usr/bin
 	fpm --name $(NAME) -a x86_64 -t rpm -s dir --version $(VERSION) --iteration $(ITERATION) -C stage -p package/$(NAME)-$(VERSION)_$(ITERATION).rpm usr
 	fpm --name $(NAME) -a x86_64 -t deb -s dir --version $(VERSION) --iteration $(ITERATION) -C stage -p package/$(NAME)-$(VERSION)_$(ITERATION).deb usr
 
 generate-mocks:
 	mockery -dir ../../aws/aws-sdk-go/service/kms/kmsiface --all
-	mockery -dir ../../aws/aws-sdk-go/service/dynamodb/dynamodbiface -testonly -all
+	mockery -dir ../../aws/aws-sdk-go/service/dynamodb/dynamodbiface --all
 
 .PHONY: build fmt test integration watch release packages
