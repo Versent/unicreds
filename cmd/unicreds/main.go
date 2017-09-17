@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -107,7 +106,7 @@ func main() {
 			log.WithFields(log.Fields{"name": *cmdGetName, "secret": cred.Secret, "status": "success"}).Info(cred.Secret)
 		} else {
 			// Or just print, out of backwards compatibility
-			printSecret(cred.Secret, *cmdGetNoLine)
+			unicreds.FprintSecret(os.Stdout, cred.Secret, *cmdGetNoLine)
 		}
 
 	case cmdPut.FullCommand():
@@ -205,15 +204,6 @@ func main() {
 func printFatalError(err error) {
 	log.WithError(err).Error("failed")
 	os.Exit(1)
-}
-
-func printSecret(secret string, noline bool) {
-	log.WithField("noline", noline).Debug("print secret")
-	if noline {
-		fmt.Printf(secret)
-	} else {
-		fmt.Println(secret)
-	}
 }
 
 func printEncryptionContext(encContext *unicreds.EncryptionContextValue) {
