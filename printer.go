@@ -2,15 +2,16 @@ package unicreds
 
 import (
 	"fmt"
+	"io"
 
 	"github.com/apex/log"
 )
 
-func PrintSecret(secret string, noline bool) {
+func PrintSecret(w io.Writer, secret string, noline bool) {
 	log.WithField("noline", noline).Debug("print secret")
 	if noline {
-		fmt.Printf("%s", secret)
+		fmt.Fprintf(w, "%s", secret)
 	} else {
-		fmt.Println(secret)
+		fmt.Fprintln(w, secret)
 	}
 }

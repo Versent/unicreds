@@ -1,6 +1,11 @@
 package unicreds
 
+import (
+	"os"
+)
+
 func ExamplePrintSecret() {
+	w := os.Stdout
 	var printSecretTests = []struct {
 		in string
 		// must manually specify output in Example tests
@@ -16,7 +21,7 @@ func ExamplePrintSecret() {
 
 	for _, noline := range []bool{false, true} {
 		for _, tt := range printSecretTests {
-			PrintSecret(tt.in, noline)
+			PrintSecret(w, tt.in, noline)
 		}
 	}
 
