@@ -1,4 +1,4 @@
-package main
+package unicreds
 
 func ExamplePrintSecret() {
 	var printSecretTests = []struct {
@@ -16,7 +16,7 @@ func ExamplePrintSecret() {
 
 	for _, noline := range []bool{false, true} {
 		for _, tt := range printSecretTests {
-			printSecret(tt.in, noline)
+			PrintSecret(tt.in, noline)
 		}
 	}
 
