@@ -106,7 +106,7 @@ func main() {
 			log.WithFields(log.Fields{"name": *cmdGetName, "secret": cred.Secret, "status": "success"}).Info(cred.Secret)
 		} else {
 			// Or just print, out of backwards compatibility
-			unicreds.PrintSecret(os.Stdout, cred.Secret, *cmdGetNoLine)
+			unicreds.FprintSecret(os.Stdout, cred.Secret, *cmdGetNoLine)
 		}
 
 	case cmdPut.FullCommand():

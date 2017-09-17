@@ -7,7 +7,7 @@ import (
 	"github.com/apex/log"
 )
 
-func PrintSecret(w io.Writer, secret string, noline bool) {
+func FprintSecret(w io.Writer, secret string, noline bool) {
 	log.WithField("noline", noline).Debug("print secret")
 	if noline {
 		fmt.Fprintf(w, "%s", secret)

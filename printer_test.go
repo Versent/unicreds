@@ -4,7 +4,7 @@ import (
 	"os"
 )
 
-func ExamplePrintSecret() {
+func ExampleFprintSecret() {
 	w := os.Stdout
 	var printSecretTests = []struct {
 		in string
@@ -21,7 +21,7 @@ func ExamplePrintSecret() {
 
 	for _, noline := range []bool{false, true} {
 		for _, tt := range printSecretTests {
-			PrintSecret(w, tt.in, noline)
+			FprintSecret(w, tt.in, noline)
 		}
 	}
 
