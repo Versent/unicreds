@@ -210,7 +210,7 @@ func printFatalError(err error) {
 func printSecret(secret string, noline bool) {
 	log.WithField("noline", noline).Debug("print secret")
 	if noline {
-		fmt.Printf(secret)
+		fmt.Print(secret)
 	} else {
 		fmt.Println(secret)
 	}
