@@ -52,6 +52,10 @@ func SetDynamoDBConfig(config *aws.Config) {
 	dynamoSvc = dynamodb.New(session.New(), config)
 }
 
+func SetDynamoDBSession(sess *session.Session) {
+	dynamoSvc = dynamodb.New(sess)
+}
+
 // Credential managed credential information
 type Credential struct {
 	Name      string `dynamodbav:"name"`

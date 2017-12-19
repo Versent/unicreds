@@ -41,7 +41,7 @@ func SetAwsConfig(region, profile *string, role *string) (err error) {
 
 func setAwsConfig(region, profile *string, role *string) {
 	log.WithFields(log.Fields{"region": aws.StringValue(region), "profile": aws.StringValue(profile)}).Debug("Configure AWS")
-	config := &aws.Config{Region: region}
+	config := aws.Config{Region: region}
 
 	// if a profile is supplied then just use the shared credentials provider
 	// as per docs this will look in $HOME/.aws/credentials if the filename is ""
@@ -52,11 +52,16 @@ func setAwsConfig(region, profile *string, role *string) {
 	// Are we assuming a role?
 	if aws.StringValue(role) != "" {
 		// Must request credentials from STS service and replace before passing on
-		sess := session.Must(session.NewSession(config))
+		sts_sess := session.Must(session.NewSession(&config))
 		log.WithFields(log.Fields{"role": aws.StringValue(role)}).Debug("AssumeRole")
-		config.Credentials = stscreds.NewCredentials(sess, *role)
+		config.Credentials = stscreds.NewCredentials(sts_sess, *role)
 	}
 
-	SetDynamoDBConfig(config)
-	SetKMSConfig(config)
+	sess := session.Must(session.NewSessionWithOptions(session.Options{
+		Config:            config,
+		SharedConfigState: session.SharedConfigEnable,
+	}))
+
+	SetDynamoDBSession(sess)
+	SetKMSSession(sess)
 }
