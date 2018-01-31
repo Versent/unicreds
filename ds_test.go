@@ -3,6 +3,8 @@ package unicreds
 import (
 	"testing"
 
+	"github.com/Versent/unicreds/mocks"
+
 	"github.com/apex/log"
 	"github.com/apex/log/handlers/cli"
 	"github.com/aws/aws-sdk-go/aws"
@@ -11,7 +13,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/kms"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/versent/unicreds/mocks"
 )
 
 var (
