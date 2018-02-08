@@ -83,16 +83,25 @@ Commands:
     Execute a command with all secrets loaded as environment variables.
 ```
 
+Unicreds supports the `AWS_*` environment variables, and configuration in `~/.aws/credentials` and `~/.aws/config`
+
 # examples
 
 * List secrets using default profile:
 ```
-$ unicreds -r us-west-2 list
+$ unicreds list
 ```
 
-* List secrets using profile MYPROFILE in `~/.aws/credentials` (NOTE: `~/.aws/config` is only used by aws CLI, not the SDK)
+* List secrets using the default profile, in a different region:
+```
+$ unicreds -r us-east-2 list
+$ AWS_REGION=us-east-2 unicreds list
+```
+
+* List secrets using profile MYPROFILE in `~/.aws/credentials` or `~/.aws/config`
 ```
 $ unicreds -r us-west-2 -p MYPROFILE list
+$ AWS_PROFILE=MYPROFILE unicreds list
 ```
 
 * List secrets using a profile, but also assuming a role:
