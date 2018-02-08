@@ -25,10 +25,6 @@ func SetAwsConfig(region, profile *string, role *string) (err error) {
 		}
 	}
 
-	if aws.StringValue(region) == "" && aws.StringValue(profile) == "" {
-		return nil
-	}
-
 	// This is to work around a limitation of the credentials
 	// chain when providing an AWS profile as a flag
 	if aws.StringValue(region) == "" && aws.StringValue(profile) != "" {
