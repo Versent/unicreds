@@ -1,6 +1,7 @@
 package unicreds
 
 import (
+	"bytes"
 	"encoding/base64"
 	"errors"
 	"io/ioutil"
@@ -62,7 +63,7 @@ type Credential struct {
 	Version   string `dynamodbav:"version"`
 	Key       string `dynamodbav:"key"`
 	Contents  string `dynamodbav:"contents"`
-	Hmac      string `dynamodbav:"hmac"`
+	Hmac      []byte `dynamodbav:"hmac"`
 	CreatedAt int64  `dynamodbav:"created_at"`
 }
 
@@ -168,7 +169,7 @@ func GetHighestVersionSecret(tableName *string, name string, encContext *Encrypt
 			"#N": aws.String("name"),
 		},
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
-			":name": &dynamodb.AttributeValue{
+			":name": {
 				S: aws.String(name),
 			},
 		},
@@ -235,7 +236,7 @@ func GetHighestVersion(tableName *string, name string) (string, error) {
 			"#N": aws.String("name"),
 		},
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
-			":name": &dynamodb.AttributeValue{
+			":name": {
 				S: aws.String(name),
 			},
 		},
@@ -548,7 +549,7 @@ func decryptCredential(cred *Credential, encContext *EncryptionContextValue) (*D
 
 	hexhmac := ComputeHmac256(contents, hmacKey)
 
-	if hexhmac != cred.Hmac {
+	if !bytes.Equal(hexhmac, cred.Hmac) {
 		return nil, ErrHmacValidationFailed
 	}
 
