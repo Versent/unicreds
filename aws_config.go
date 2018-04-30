@@ -5,7 +5,6 @@ import (
 
 	"github.com/apex/log"
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 	"github.com/aws/aws-sdk-go/aws/session"
 )
@@ -47,25 +46,21 @@ func setAwsConfig(region, profile *string, role *string) {
 func getAwsSession(region, profile, role *string) *session.Session {
 	config := aws.Config{Region: region}
 
-	// If a role is supplied, get credentials from STS Session
-	if aws.StringValue(role) != "" {
-		// If the role is being assumed through a non-default profile it must be added to the config.
-		// When an empty string is provided, it uses the default credentials file.
-		if aws.StringValue(profile) != "" {
-			config.Credentials = credentials.NewSharedCredentials("", *profile)
-		}
-
-		sts_session := session.Must(session.NewSession(&config))
-		log.WithFields(log.Fields{"role": aws.StringValue(role), "profile": aws.StringValue(profile)}).Debug("AssumeRole")
-		config.Credentials = stscreds.NewCredentials(sts_session, *role)
-
-		return session.Must(session.NewSession(&config))
-	}
-
 	// If no role is supplied, use the shared AWS config
-	return session.Must(session.NewSessionWithOptions(session.Options{
+	sess := session.Must(session.NewSessionWithOptions(session.Options{
 		Config:            config,
 		SharedConfigState: session.SharedConfigEnable,
 		Profile:           *profile,
 	}))
+
+	// If a role is supplied, return a new session using STS-generated credentials
+	if aws.StringValue(role) != "" {
+		log.WithFields(log.Fields{"role": aws.StringValue(role), "profile": aws.StringValue(profile)}).Debug("AssumeRole")
+		config.Credentials = stscreds.NewCredentials(sess, *role)
+
+		return session.Must(session.NewSession(&config))
+	}
+
+	// If no role is assumed, return initial session
+	return sess
 }
