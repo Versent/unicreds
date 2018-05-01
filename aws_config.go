@@ -34,7 +34,7 @@ func SetAwsConfig(region, profile *string, role *string) (err error) {
 	return nil
 }
 
-func setAwsConfig(region, profile *string, role *string) {
+func setAwsConfig(region, profile, role *string) {
 	log.WithFields(log.Fields{"region": aws.StringValue(region), "profile": aws.StringValue(profile)}).Debug("Configure AWS")
 
 	sess := getAwsSession(region, profile, role)
@@ -50,7 +50,7 @@ func getAwsSession(region, profile, role *string) *session.Session {
 	sess := session.Must(session.NewSessionWithOptions(session.Options{
 		Config:            config,
 		SharedConfigState: session.SharedConfigEnable,
-		Profile:           *profile,
+		Profile:           aws.StringValue(profile),
 	}))
 
 	// If a role is supplied, return a new session using STS-generated credentials
