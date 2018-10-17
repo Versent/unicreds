@@ -15,7 +15,7 @@ const (
 
 // SetAwsConfig configure the AWS region with a fallback for discovery
 // on EC2 hosts.
-func SetAwsConfig(region, profile *string, role *string) (err error) {
+func SetAwsConfig(region, profile, role *string) (err error) {
 	if region == nil {
 		// Try to get our region based on instance metadata
 		region, err = getRegion()
