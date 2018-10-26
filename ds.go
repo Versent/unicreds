@@ -111,11 +111,10 @@ func (slice ByName) Less(i, j int) bool {
 
 const MaxPaddingLength = 19 // Number of digits in MaxInt64
 
-// PaddedInt returns an integer left-padded with zeroes to the max-int length
-func PaddedInt(i int) string {
-	iString := strconv.Itoa(i)
-	padLength := MaxPaddingLength - len(iString)
-	return strings.Repeat("0", padLength) + strconv.Itoa(i)
+// PaddedVersion returns a string left-padded with zeroes to the max-int length
+func PaddedVersion(s string) string {
+	padLength := MaxPaddingLength - len(s)
+	return strings.Repeat("0", padLength) + s
 }
 
 // Setup create the table which stores credentials
@@ -174,9 +173,9 @@ func GetHighestVersionSecret(tableName *string, name string, encContext *Encrypt
 			},
 		},
 		KeyConditionExpression: aws.String("#N = :name"),
-		Limit:            aws.Int64(1),
-		ConsistentRead:   aws.Bool(true),
-		ScanIndexForward: aws.Bool(false), // descending order
+		Limit:                  aws.Int64(1),
+		ConsistentRead:         aws.Bool(true),
+		ScanIndexForward:       aws.Bool(false), // descending order
 	})
 
 	if err != nil {
@@ -386,7 +385,7 @@ func PutSecret(tableName *string, alias, name, secret, version string, encContex
 	}
 
 	if version == "" {
-		version = PaddedInt(1)
+		version = PaddedVersion("1")
 	}
 
 	dk, err := GenerateDataKey(kmsKey, encContext, 64)
@@ -490,30 +489,31 @@ func DeleteSecret(tableName *string, name string) error {
 	return nil
 }
 
-// ResolveVersion converts an integer version to a string, or if a version isn't provided (0),
+// ResolveVersion parses versions, or if a version isn't provided (""),
 // returns "1" if the secret doesn't exist or the latest version plus one (auto-increment) if it does.
-func ResolveVersion(tableName *string, name string, version int) (string, error) {
+func ResolveVersion(tableName *string, name string, version string) (string, error) {
 	log.Debug("Resolving version")
 
-	if version != 0 {
-		return PaddedInt(version), nil
+	if version != "" {
+		return PaddedVersion(version), nil
 	}
 
 	ver, err := GetHighestVersion(tableName, name)
 	if err != nil {
 		if err == ErrSecretNotFound {
-			return PaddedInt(1), nil
+			return PaddedVersion("1"), nil
 		}
 		return "", err
 	}
 
-	if version, err = strconv.Atoi(ver); err != nil {
+	versionInt := 1
+	if versionInt, err = strconv.Atoi(ver); err != nil {
 		return "", err
 	}
 
-	version++
+	versionInt++
 
-	return PaddedInt(version), nil
+	return PaddedVersion(strconv.Itoa(versionInt)), nil
 }
 
 func decryptCredential(cred *Credential, encContext *EncryptionContextValue) (*DecryptedCredential, error) {
