@@ -37,7 +37,7 @@ var (
 	cmdGet        = app.Command("get", "Get a credential from the store.")
 	cmdGetName    = cmdGet.Arg("credential", "The name of the credential to get.").Required().String()
 	cmdGetNoLine  = cmdGet.Flag("noline", "Leave off the newline when emitting secret").Short('n').Bool()
-	cmdGetVersion = cmdGet.Arg("version", "The version of the credential to get.").Int()
+	cmdGetVersion = cmdGet.Arg("version", "The version of the credential to get.").Default("").String()
 
 	cmdGetAll         = app.Command("getall", "Get latest credentials from the store.")
 	cmdGetAllVersions = cmdGetAll.Flag("all", "List all versions").Bool()
@@ -48,12 +48,12 @@ var (
 	cmdPut        = app.Command("put", "Put a credential into the store.")
 	cmdPutName    = cmdPut.Arg("credential", "The name of the credential to store.").Required().String()
 	cmdPutSecret  = cmdPut.Arg("value", "The value of the credential to store.").Required().String()
-	cmdPutVersion = cmdPut.Arg("version", "Version to store with the credential.").Int()
+	cmdPutVersion = cmdPut.Arg("version", "Version to store with the credential.").Default("").String()
 
 	cmdPutFile           = app.Command("put-file", "Put a credential from a file into the store.")
 	cmdPutFileName       = cmdPutFile.Arg("credential", "The name of the credential to store.").Required().String()
 	cmdPutFileSecretPath = cmdPutFile.Arg("value", "Path to file containing the credential to store.").Required().String()
-	cmdPutFileVersion    = cmdPutFile.Arg("version", "Version to store with the credential.").Int()
+	cmdPutFileVersion    = cmdPutFile.Arg("version", "Version to store with the credential.").Default("").String()
 
 	cmdDelete     = app.Command("delete", "Delete a credential from the store.")
 	cmdDeleteName = cmdDelete.Arg("credential", "The name of the credential to delete.").Required().String()
@@ -92,10 +92,10 @@ func main() {
 	case cmdGet.FullCommand():
 		var cred *unicreds.DecryptedCredential
 		var err error
-		if *cmdGetVersion == 0 {
+		if *cmdGetVersion == "" {
 			cred, err = unicreds.GetHighestVersionSecret(dynamoTable, *cmdGetName, encContext)
 		} else {
-			cred, err = unicreds.GetSecret(dynamoTable, *cmdGetName, unicreds.PaddedInt(*cmdGetVersion), encContext)
+			cred, err = unicreds.GetSecret(dynamoTable, *cmdGetName, unicreds.PaddedVersion(*cmdGetVersion), encContext)
 		}
 		if err != nil {
 			printFatalError(err)

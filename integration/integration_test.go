@@ -5,6 +5,7 @@ package integration
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"testing"
 
 	"github.com/apex/log"
@@ -42,7 +43,7 @@ func TestIntegrationGetSecret(t *testing.T) {
 	(*encContext)["test"] = aws.String("123")
 
 	for i := 0; i < 15; i++ {
-		err = unicreds.PutSecret(aws.String(tableName), alias, "Integration1", fmt.Sprintf("secret%d", i), unicreds.PaddedInt(i), encContext)
+		err = unicreds.PutSecret(aws.String(tableName), alias, "Integration1", fmt.Sprintf("secret%d", i), unicreds.PaddedVersion(strconv.Itoa(i)), encContext)
 		if err != nil {
 			log.Errorf("put err: %v", err)
 		}
@@ -58,12 +59,12 @@ func TestIntegrationGetSecret(t *testing.T) {
 	assert.NotZero(t, cred.Version)
 
 	for i := 0; i < 15; i++ {
-		cred, err := unicreds.GetSecret(aws.String(tableName), "Integration1", unicreds.PaddedInt(i), encContext)
+		cred, err := unicreds.GetSecret(aws.String(tableName), "Integration1", unicreds.PaddedVersion(strconv.Itoa(i)), encContext)
 		assert.Nil(t, err)
 		assert.Equal(t, cred.Name, "Integration1")
 		assert.Equal(t, cred.Secret, fmt.Sprintf("secret%d", i))
 		assert.NotZero(t, cred.CreatedAt)
-		assert.Equal(t, cred.Version, unicreds.PaddedInt(i))
+		assert.Equal(t, cred.Version, unicreds.PaddedVersion(strconv.Itoa(i)))
 	}
 
 	creds, err := unicreds.GetAllSecrets(aws.String(tableName), true)
