@@ -153,6 +153,9 @@ func main() {
 		if *csv {
 			table.SetFormat(unicreds.TableFormatCSV)
 		}
+		if *logJSON {
+			table.SetFormat(unicreds.TableFormatJSON)
+		}
 
 		for _, cred := range creds {
 			table.Write([]string{cred.Name, cred.Version, cred.CreatedAtDate()})
@@ -171,6 +174,9 @@ func main() {
 
 		if *csv {
 			table.SetFormat(unicreds.TableFormatCSV)
+		}
+		if *logJSON {
+			table.SetFormat(unicreds.TableFormatJSON)
 		}
 
 		for _, cred := range creds {
