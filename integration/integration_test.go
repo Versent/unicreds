@@ -7,11 +7,12 @@ import (
 	"os"
 	"testing"
 
+	"github.com/Versent/unicreds"
+
 	"github.com/apex/log"
 	"github.com/apex/log/handlers/cli"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/stretchr/testify/assert"
-	"github.com/versent/unicreds"
 )
 
 func init() {

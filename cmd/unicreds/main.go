@@ -7,12 +7,12 @@ import (
 	"os/exec"
 	"syscall"
 
+	"github.com/Versent/unicreds"
+
+	"github.com/alecthomas/kingpin"
 	"github.com/apex/log"
 	"github.com/apex/log/handlers/cli"
 	"github.com/apex/log/handlers/json"
-
-	"github.com/alecthomas/kingpin"
-	"github.com/versent/unicreds"
 )
 
 var (
