@@ -21,12 +21,11 @@ func Decode(data map[string]*dynamodb.AttributeValue, rawVal interface{}) error 
 	// This is needed until this issue is resolved, and also until we push new
 	// values into credstash that have a string hmac value and not a binary hmac
 	// value
-	if h, ok := data["hmac"]; ok && len(h.B) > 0 {
-		hmac := string(h.B)
-		data["hmac"] = &dynamodb.AttributeValue{S: &hmac}
-	}
+	//	if h, ok := data["hmac"]; ok && len(h.B) > 0 {
+	//		hmac := string(h.B)
+	//		data["hmac"] = &dynamodb.AttributeValue{S: &hmac}
+	//	}
 
-	// From master, not sure if the above is still needed
-	//adjustHmac(data)
+	adjustHmac(data)
 	return dynamodbattribute.UnmarshalMap(data, rawVal)
 }
