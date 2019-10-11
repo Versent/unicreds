@@ -28,10 +28,13 @@ func Encrypt(key, plaintext []byte) ([]byte, error) {
 
 // ComputeHmac256 compute a hmac256 signature of the supplied message and return
 // the value hex encoded
-func ComputeHmac256(message, secret []byte) string {
+func ComputeHmac256(message, secret []byte) []byte {
 	h := hmac.New(sha256.New, secret)
 	h.Write(message)
-	return hex.EncodeToString(h.Sum(nil))
+	src := h.Sum(nil)
+	dst := make([]byte, hex.EncodedLen(len(src)))
+	hex.Encode(dst, src)
+	return dst
 }
 
 // Decrypt AES encryption method which matches the pycrypto package

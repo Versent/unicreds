@@ -18,6 +18,10 @@ func SetKMSConfig(config *aws.Config) {
 	kmsSvc = kms.New(session.New(), config)
 }
 
+func SetKMSSession(sess *session.Session) {
+	kmsSvc = kms.New(sess)
+}
+
 // DataKey which contains the details of the KMS key
 type DataKey struct {
 	CiphertextBlob []byte

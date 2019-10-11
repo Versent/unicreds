@@ -5,7 +5,6 @@ import (
 
 	"github.com/apex/log"
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 	"github.com/aws/aws-sdk-go/aws/session"
 )
@@ -25,10 +24,6 @@ func SetAwsConfig(region, profile *string, role *string) (err error) {
 		}
 	}
 
-	if aws.StringValue(region) == "" && aws.StringValue(profile) == "" {
-		return nil
-	}
-
 	// This is to work around a limitation of the credentials
 	// chain when providing an AWS profile as a flag
 	if aws.StringValue(region) == "" && aws.StringValue(profile) != "" {
@@ -39,24 +34,33 @@ func SetAwsConfig(region, profile *string, role *string) (err error) {
 	return nil
 }
 
-func setAwsConfig(region, profile *string, role *string) {
+func setAwsConfig(region, profile, role *string) {
 	log.WithFields(log.Fields{"region": aws.StringValue(region), "profile": aws.StringValue(profile)}).Debug("Configure AWS")
-	config := &aws.Config{Region: region}
 
-	// if a profile is supplied then just use the shared credentials provider
-	// as per docs this will look in $HOME/.aws/credentials if the filename is ""
-	if aws.StringValue(profile) != "" {
-		config.Credentials = credentials.NewSharedCredentials("", *profile)
-	}
+	sess := getAwsSession(region, profile, role)
 
-	// Are we assuming a role?
+	SetDynamoDBSession(sess)
+	SetKMSSession(sess)
+}
+
+func getAwsSession(region, profile, role *string) *session.Session {
+	config := aws.Config{Region: region}
+
+	// If no role is supplied, use the shared AWS config
+	sess := session.Must(session.NewSessionWithOptions(session.Options{
+		Config:            config,
+		SharedConfigState: session.SharedConfigEnable,
+		Profile:           aws.StringValue(profile),
+	}))
+
+	// If a role is supplied, return a new session using STS-generated credentials
 	if aws.StringValue(role) != "" {
-		// Must request credentials from STS service and replace before passing on
-		sess := session.Must(session.NewSession(config))
-		log.WithFields(log.Fields{"role": aws.StringValue(role)}).Debug("AssumeRole")
+		log.WithFields(log.Fields{"role": aws.StringValue(role), "profile": aws.StringValue(profile)}).Debug("AssumeRole")
 		config.Credentials = stscreds.NewCredentials(sess, *role)
+
+		return session.Must(session.NewSession(&config))
 	}
 
-	SetDynamoDBConfig(config)
-	SetKMSConfig(config)
+	// If no role is assumed, return initial session
+	return sess
 }
