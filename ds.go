@@ -210,6 +210,10 @@ func GetSecret(tableName *string, name, version string, encContext *EncryptionCo
 		TableName: tableName,
 	}
 	res, err := dynamoSvc.GetItem(params)
+	
+	if err != nil {
+		return nil, err
+	}
 
 	cred := new(Credential)
 
