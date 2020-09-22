@@ -43,6 +43,8 @@ deps:
 	go get -u github.com/c4milo/github-release
 	go get -u github.com/mitchellh/gox
 	go get -u github.com/golang/dep/cmd/dep
+	go get -u github.com/alecthomas/kingpin
+	go get -u github.com/mattn/go-colorable
 
 updatedeps:
 	dep ensure
