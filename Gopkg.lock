@@ -190,17 +190,6 @@
   version = "v1.7.0"
 
 [[projects]]
-  digest = "1:ea1a8c7c4fe7e0e9e8add304d1cfdd4af50f8f5bb386d5df1583884d23885d52"
-  name = "github.com/versent/unicreds"
-  packages = [
-    ".",
-    "mocks",
-  ]
-  pruneopts = "UT"
-  revision = "7135c859e003e299267cdc7acfa4866e7ca975ad"
-  version = "1.7.0"
-
-[[projects]]
   branch = "master"
   digest = "1:cc16b8d9edce3c401e6e9c03e99a82c9747f10691c9a3c0d8bd31fa4a61d4230"
   name = "golang.org/x/sys"
@@ -240,8 +229,6 @@
     "github.com/olekukonko/tablewriter",
     "github.com/stretchr/testify/assert",
     "github.com/stretchr/testify/mock",
-    "github.com/versent/unicreds",
-    "github.com/versent/unicreds/mocks",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1
