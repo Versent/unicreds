@@ -43,6 +43,8 @@ deps:
 	go get -u github.com/c4milo/github-release
 	go get -u github.com/mitchellh/gox
 	go get -u github.com/golang/dep/cmd/dep
+	go get -u github.com/aws/aws-sdk-go
+	go get -u github.com/vektra/mockery
 
 updatedeps:
 	dep ensure
@@ -58,7 +60,7 @@ packages:
 	fpm --name $(NAME) -a x86_64 -t deb -s dir --version $(VERSION) --iteration $(ITERATION) -C stage -p package/$(NAME)-$(VERSION)_$(ITERATION).deb usr
 
 generate-mocks:
-	mockery -dir ../../aws/aws-sdk-go/service/kms/kmsiface --all
-	mockery -dir ../../aws/aws-sdk-go/service/dynamodb/dynamodbiface --all
+	mockery --dir "../../aws/aws-sdk-go/service/kms/kmsiface" --all
+	mockery --dir "../../aws/aws-sdk-go/service/dynamodb/dynamodbiface" --all
 
 .PHONY: build fmt test install integration watch release packages
