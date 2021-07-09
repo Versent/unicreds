@@ -15,6 +15,7 @@ compile:
 	@gox -ldflags "-X main.Version=$(VERSION)" \
 	-osarch="darwin/amd64" \
 	-osarch="darwin/arm64" \
+	-osarch="linux/arm64" \
 	-osarch="linux/amd64" \
 	-osarch="windows/amd64" \
 	-output "build/{{.Dir}}_$(VERSION)_{{.OS}}_{{.Arch}}/$(NAME)" \
@@ -53,15 +54,22 @@ updatedeps:
 watch:
 	scantest
 
-packages:
+package_rpm_amd64:
 	rm -rf package && mkdir package
 	rm -rf stage && mkdir -p stage/usr/bin
 	cp build/unicreds_$(VERSION)_linux_amd64/unicreds stage/usr/bin
-	fpm --name $(NAME) -a x86_64 -t rpm -s dir --version $(VERSION) --iteration $(ITERATION) -C stage -p package/$(NAME)-$(VERSION)_$(ITERATION).rpm usr
-	fpm --name $(NAME) -a x86_64 -t deb -s dir --version $(VERSION) --iteration $(ITERATION) -C stage -p package/$(NAME)-$(VERSION)_$(ITERATION).deb usr
+	fpm --name $(NAME) -a x86_64 -t rpm -s dir --version $(VERSION) --iteration $(ITERATION) -C stage -p package/$(NAME)-$(VERSION)_$(ITERATION).x86_64.rpm usr
+
+package_rpm_arm64:
+	rm -rf package && mkdir package
+	rm -rf stage && mkdir -p stage/usr/bin
+	cp build/unicreds_$(VERSION)_linux_arm64/unicreds stage/usr/bin
+	fpm --name $(NAME) -a arm64 -t rpm -s dir --version $(VERSION) --iteration $(ITERATION) -C stage -p package/$(NAME)-$(VERSION)_$(ITERATION).arm64.rpm usr
+
+packages: package_rpm_amd64 package_rpm_arm64
 
 generate-mocks:
 	mockery --dir "../../aws/aws-sdk-go/service/kms/kmsiface" --all
 	mockery --dir "../../aws/aws-sdk-go/service/dynamodb/dynamodbiface" --all
 
-.PHONY: build fmt test install integration watch release packages
+.PHONY: build fmt test install integration watch release packages package_rpm_amd64 package_rpm_amd64
