@@ -14,6 +14,7 @@ compile:
 	@rm -rf build/
 	@gox -ldflags "-X main.Version=$(VERSION)" \
 	-osarch="darwin/amd64" \
+	-osarch="darwin/arm64" \
 	-osarch="linux/amd64" \
 	-osarch="windows/amd64" \
 	-output "build/{{.Dir}}_$(VERSION)_{{.OS}}_{{.Arch}}/$(NAME)" \
@@ -44,7 +45,7 @@ deps:
 	go get -u github.com/mitchellh/gox
 	go get -u github.com/golang/dep/cmd/dep
 	go get -u github.com/aws/aws-sdk-go
-	go get -u github.com/vektra/mockery
+#	go get -u github.com/vektra/mockery
 
 updatedeps:
 	dep ensure

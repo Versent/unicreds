@@ -22,11 +22,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:9588b7aa76a6cf873adb4a30748724e8a7c553d4d62b5fc2230723b5940e2842"
+  digest = "1:d3197d14cccd4a5d4e5a04661b8a0972d13eb7165472e8051ede8cbb1d1876a2"
   name = "github.com/alecthomas/units"
   packages = ["."]
   pruneopts = "UT"
-  revision = "1786d5ef83d4868925e518b2995c30430aec0f06"
+  revision = "ff826a37aa15cdf16e29024a782c790f19aab6c2"
 
 [[projects]]
   digest = "1:7e0fb9e365a2c0b156b66cc153deed474bbc9e0edc398db06c62865274b796dd"
@@ -41,7 +41,7 @@
   version = "v1.9.0"
 
 [[projects]]
-  digest = "1:77a3f99161f605dadb427b47834779ad155d3aa49cdf6e601cfe409eaa15f633"
+  digest = "1:b92f64c9d2b8f50cba6336ade702e283cd32f7347bb619a69ed7d9c35f97c769"
   name = "github.com/aws/aws-sdk-go"
   packages = [
     "aws",
@@ -54,6 +54,7 @@
     "aws/credentials/ec2rolecreds",
     "aws/credentials/endpointcreds",
     "aws/credentials/processcreds",
+    "aws/credentials/ssocreds",
     "aws/credentials/stscreds",
     "aws/crr",
     "aws/csm",
@@ -78,18 +79,21 @@
     "private/protocol/query",
     "private/protocol/query/queryutil",
     "private/protocol/rest",
+    "private/protocol/restjson",
     "private/protocol/xml/xmlutil",
     "service/dynamodb",
     "service/dynamodb/dynamodbattribute",
     "service/dynamodb/dynamodbiface",
     "service/kms",
     "service/kms/kmsiface",
+    "service/sso",
+    "service/sso/ssoiface",
     "service/sts",
     "service/sts/stsiface",
   ]
   pruneopts = "UT"
-  revision = "a07292d851679b1c7cbbb2745aa64f02ac50136a"
-  version = "v1.36.29"
+  revision = "0a9f5d6f02f7eef07c7b05416be9f51d1bef25a5"
+  version = "v1.39.3"
 
 [[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
@@ -100,12 +104,12 @@
   version = "v1.1.1"
 
 [[projects]]
-  digest = "1:6e6a015e8e8fa80006309826c6129b59341c56103245da051f206b1b3605f0bb"
+  digest = "1:1bf705ef0cc4bafbfdead4cadfa541624d034eb922b82440cbb631bb84b9a2c0"
   name = "github.com/fatih/color"
   packages = ["."]
   pruneopts = "UT"
-  revision = "bc2269661d49c6c9d0e514eef49710556883f3fa"
-  version = "v1.10.0"
+  revision = "cf452350f542986d689fb53db88dbb0212f141db"
+  version = "v1.12.0"
 
 [[projects]]
   digest = "1:bb81097a5b62634f3e9fec1014657855610c82d19b9a40c17612e32651e35dca"
@@ -123,28 +127,28 @@
   version = "v0.1.8"
 
 [[projects]]
-  digest = "1:0c58d31abe2a2ccb429c559b6292e7df89dcda675456fecc282fa90aa08273eb"
+  digest = "1:f0d049b77e8f5a23aa89750a9f0da6417dc3abf0b7f3f35a161c1c5eb9f926a4"
   name = "github.com/mattn/go-isatty"
   packages = ["."]
   pruneopts = "UT"
-  revision = "7b513a986450394f7bbf1476909911b3aa3a55ce"
-  version = "v0.0.12"
+  revision = "8b0c6d82fa8980f9bff874afff66860a0c3e9c5c"
+  version = "v0.0.13"
 
 [[projects]]
-  digest = "1:48a6af8193acef33a5e96299a9f14822c74ad1c50c3f8aed2467f87e6056d4c9"
+  digest = "1:07b7c16cd2c5062a00a90e48298cea91ec2dde7d3480f51e796e41dae8e5eac2"
   name = "github.com/mattn/go-runewidth"
   packages = ["."]
   pruneopts = "UT"
-  revision = "59616a248b91ae20bf3eb93636a24c87d9ce6cea"
-  version = "v0.0.10"
+  revision = "df1ff59654317c1b5a3f860ffc47402931932104"
+  version = "v0.0.13"
 
 [[projects]]
   branch = "master"
-  digest = "1:769794f9444788ad8d15c989c7d69c55adff757a4c9fc46efa4c4a535acaccf8"
+  digest = "1:8a34ab37579cdccf0c22dda3b31982846ba60c980094056d977acc4ff0fd1319"
   name = "github.com/olekukonko/tablewriter"
   packages = ["."]
   pruneopts = "UT"
-  revision = "42e21c7531a331ccf90bae20a8816b7c4ecf6b72"
+  revision = "74c60be0ef6886d331ebc3c91b2ac0a7971715b6"
 
 [[projects]]
   digest = "1:9e1d37b58d17113ec3cb5608ac0382313c5b59470b94ed97d0976e69c7022314"
@@ -191,14 +195,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:cc16b8d9edce3c401e6e9c03e99a82c9747f10691c9a3c0d8bd31fa4a61d4230"
+  digest = "1:b3f1f29803b6cdf4882610bb4c74df41900e9c8b4b37b7d0231e25539275001c"
   name = "golang.org/x/sys"
   packages = [
     "internal/unsafeheader",
     "unix",
   ]
   pruneopts = "UT"
-  revision = "b64e53b001e413bd5067f36d4e439eded3827374"
+  revision = "0f9fa26af87c481a6877a4ca1330699ba9a30673"
 
 [[projects]]
   branch = "v3"
