@@ -12,7 +12,7 @@ import (
 	"github.com/apex/log/handlers/json"
 
 	"github.com/alecthomas/kingpin"
-	"github.com/Vivino/unicreds"
+	"github.com/Versent/unicreds"
 )
 
 var (
@@ -62,7 +62,7 @@ var (
 	cmdExecuteCommand = cmdExecute.Arg("command", "The command to execute.").Required().Strings()
 
 	// Version app version
-	Version = "1.0.0"
+	Version = "1.7.0"
 )
 
 func main() {

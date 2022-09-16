@@ -38,18 +38,17 @@ release: dist
 	comparison="$$latest_tag..HEAD"; \
 	if [ -z "$$latest_tag" ]; then comparison=""; fi; \
 	changelog=$$(git log $$comparison --oneline --no-merges --reverse); \
-	$(GOPATH)/bin/github-release versent/$(NAME) $(VERSION) "$$(git rev-parse --abbrev-ref HEAD)" "**Changelog**<br/>$$changelog" 'dist/*'; \
+	$(GOPATH)/bin/github-release Versent/$(NAME) $(VERSION) "$$(git rev-parse --abbrev-ref HEAD)" "**Changelog**<br/>$$changelog" 'dist/*'; \
 	git pull
 
-deps:
-	go get -u github.com/c4milo/github-release
-	go get -u github.com/mitchellh/gox
-	go get -u github.com/golang/dep/cmd/dep
-	go get -u github.com/aws/aws-sdk-go
+deps: go_download
+	go install github.com/mitchellh/gox
+#	go get -u github.com/c4milo/github-release
+#	go get -u github.com/aws/aws-sdk-go
 #	go get -u github.com/vektra/mockery
 
-updatedeps:
-	dep ensure
+go_download:
+	go mod download
 
 watch:
 	scantest
