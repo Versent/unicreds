@@ -15,7 +15,7 @@ const (
 
 // SetAwsConfig configure the AWS region with a fallback for discovery
 // on EC2 hosts.
-func SetAwsConfig(region, profile *string, role *string) (err error) {
+func SetAwsConfig(region, profile *string, role *string, endpoint *string) (err error) {
 	if region == nil {
 		// Try to get our region based on instance metadata
 		region, err = getRegion()
@@ -30,21 +30,21 @@ func SetAwsConfig(region, profile *string, role *string) (err error) {
 		return fmt.Errorf("Must provide a region flag when specifying a profile")
 	}
 
-	setAwsConfig(region, profile, role)
+	setAwsConfig(region, profile, role, endpoint)
 	return nil
 }
 
-func setAwsConfig(region, profile, role *string) {
-	log.WithFields(log.Fields{"region": aws.StringValue(region), "profile": aws.StringValue(profile)}).Debug("Configure AWS")
+func setAwsConfig(region, profile, role *string, endpoint *string) {
+	log.WithFields(log.Fields{"region": aws.StringValue(region), "profile": aws.StringValue(profile), "endpoint": aws.StringValue(endpoint)}).Debug("Configure AWS")
 
-	sess := getAwsSession(region, profile, role)
+	sess := getAwsSession(region, profile, role, endpoint)
 
 	SetDynamoDBSession(sess)
 	SetKMSSession(sess)
 }
 
-func getAwsSession(region, profile, role *string) *session.Session {
-	config := aws.Config{Region: region}
+func getAwsSession(region, profile, role *string, endpoint *string) *session.Session {
+	config := aws.Config{Region: region, Endpoint: endpoint}
 
 	// If no role is supplied, use the shared AWS config
 	sess := session.Must(session.NewSessionWithOptions(session.Options{

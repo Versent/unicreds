@@ -21,9 +21,10 @@ var (
 	debug   = app.Flag("debug", "Enable debug mode.").Short('d').Bool()
 	logJSON = app.Flag("json", "Output results in JSON").Short('j').Bool()
 
-	region  = app.Flag("region", "Configure the AWS region").Short('r').String()
-	profile = app.Flag("profile", "Configure the AWS profile").Short('p').String()
-	role    = app.Flag("role", "Specify an AWS role ARN to assume").Short('R').String()
+	region   = app.Flag("region", "Configure the AWS region").Short('r').String()
+	profile  = app.Flag("profile", "Configure the AWS profile").Short('p').String()
+	role     = app.Flag("role", "Specify an AWS role ARN to assume").Short('R').String()
+	endpoint = app.Flag("endpoint", "Override default endpoint (e.g. Localstack)").Short('e').String()
 
 	dynamoTable = app.Flag("table", "DynamoDB table.").Default("credential-store").OverrideDefaultFromEnvar("UNICREDS_TABLE").Short('t').String()
 	alias       = app.Flag("alias", "KMS key alias.").Default("alias/credstash").OverrideDefaultFromEnvar("UNICREDS_ALIAS").Short('k').String()
@@ -80,7 +81,7 @@ func main() {
 		log.SetLevel(log.DebugLevel)
 	}
 
-	unicreds.SetAwsConfig(region, profile, role)
+	unicreds.SetAwsConfig(region, profile, role, endpoint)
 
 	switch command {
 	case cmdSetup.FullCommand():
