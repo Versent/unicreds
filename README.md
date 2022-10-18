@@ -47,6 +47,7 @@ Flags:
   -r, --region=REGION            Configure the AWS region
   -p, --profile=PROFILE          Configure the AWS profile
   -R, --role=ROLE                Specify an AWS role ARN to assume
+  -e, --endpoint=ENDPOINT        Override default endpoint (e.g. Localstack)
   -t, --table="credential-store"
                                  DynamoDB table.
   -k, --alias="alias/credstash"  KMS key alias.
