@@ -11,7 +11,7 @@ import (
 	"github.com/apex/log/handlers/cli"
 	"github.com/apex/log/handlers/json"
 
-	"github.com/MasteryConnect/unicreds"
+	"github.com/instructure/mc-unicreds"
 	"github.com/alecthomas/kingpin"
 )
 

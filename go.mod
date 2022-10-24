@@ -1,4 +1,4 @@
-module github.com/MasteryConnect/unicreds
+module github.com/instructure/mc-unicreds
 
 go 1.19
 
