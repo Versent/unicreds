@@ -646,12 +646,37 @@ func getRegion() (*string, error) {
 		Timeout: timeout,
 	}
 
-	response, err := client.Get(zoneURL)
+	// get token
+	req, err := http.NewRequest("PUT", tokenURL, nil)
 	if err != nil {
-		log.WithField("err", err).Debug("Request instance region")
-		return nil, nil
+		log.WithField("err", err).Debug("Creating request for IMDSv2 token")
+		return nil, err
+	}
+	req.Header.Add("X-aws-ec2-metadata-token-ttl-seconds", "21600") // Token's life for 6 hours
+	resp, err := client.Do(req)
+	if err != nil {
+		log.WithField("err", err).Debug("Requesting IMDSv2 token")
+		return nil, err
+	}
+	token, err := ioutil.ReadAll(resp.Body)
+	resp.Body.Close()
+	if err != nil {
+		log.WithField("err", err).Debug("Reading IMDSv2 token")
+		return nil, err
 	}
 
+	// use the token to make the request
+	req, err = http.NewRequest("GET", zoneURL, nil)
+	if err != nil {
+		log.WithField("err", err).Debug("Creating request for instance region")
+		return nil, err
+	}
+	req.Header.Add("X-aws-ec2-metadata-token", string(token))
+	response, err := client.Do(req)
+	if err != nil {
+		log.WithField("err", err).Debug("Requesting instance region")
+		return nil, err
+	}
 	defer response.Body.Close()
 	contents, err := ioutil.ReadAll(response.Body)
 	if err != nil {

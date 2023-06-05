@@ -10,7 +10,8 @@ import (
 )
 
 const (
-	zoneURL = "http://169.254.169.254/latest/meta-data/placement/availability-zone"
+	tokenURL = "http://169.254.169.254/latest/api/token"
+	zoneURL  = "http://169.254.169.254/latest/meta-data/placement/availability-zone"
 )
 
 // SetAwsConfig configure the AWS region with a fallback for discovery
